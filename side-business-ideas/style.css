@@ -1,0 +1,271 @@
+/* ============================================================
+   COMING SOON — style.css
+   ✏️ EDIT: Colors defined as CSS variables at the top.
+   Change --accent to match your brand color.
+   ============================================================ */
+
+/* --- Design tokens --- */
+:root {
+  --accent: #6c63ff;          /* ✏️ EDIT: your primary brand color */
+  --accent-dark: #574fd6;
+  --text-primary: #0f0f1a;
+  --text-secondary: #5a5a72;
+  --text-muted: #9696a8;
+  --bg: #ffffff;
+  --surface: #f7f7fc;
+  --border: #e4e4f0;
+  --radius: 12px;
+  --shadow: 0 4px 24px rgba(108, 99, 255, 0.12);
+  --font: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* --- Reset & base --- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* --- Animated background gradient blob --- */
+.bg-gradient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% -10%, rgba(108, 99, 255, 0.15) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 110%, rgba(108, 99, 255, 0.10) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* --- Layout --- */
+.container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 48px 24px 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 48px;
+}
+
+/* --- Logo --- */
+.logo-area { width: 100%; }
+
+.logo {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+/* --- Hero --- */
+.hero {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.headline {
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  color: var(--text-primary);
+  /* Gradient text accent */
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent) 120%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subheadline {
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  color: var(--text-secondary);
+  line-height: 1.6;
+  max-width: 480px;
+}
+
+/* --- Signup form --- */
+.signup-form { width: 100%; max-width: 480px; }
+
+.form-group {
+  display: flex;
+  gap: 8px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: calc(var(--radius) + 2px);
+  padding: 6px 6px 6px 16px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group:focus-within {
+  border-color: var(--accent);
+  box-shadow: var(--shadow);
+}
+
+.email-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-family: var(--font);
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  outline: none;
+  min-width: 0;
+}
+
+.email-input::placeholder { color: var(--text-muted); }
+
+.submit-btn {
+  flex-shrink: 0;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 10px 22px;
+  font-family: var(--font);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  position: relative;
+}
+
+.submit-btn:hover { background: var(--accent-dark); }
+.submit-btn:active { transform: scale(0.97); }
+
+.submit-btn .btn-loading { display: none; }
+
+.submit-btn.is-loading .btn-text { display: none; }
+.submit-btn.is-loading .btn-loading { display: inline; }
+.submit-btn.is-loading { opacity: 0.7; pointer-events: none; }
+
+.form-note {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* --- Messages --- */
+.message {
+  width: 100%;
+  max-width: 480px;
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.message--success {
+  background: #edfaf3;
+  color: #1a7a4a;
+  border: 1.5px solid #b5ead6;
+}
+
+.message--error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1.5px solid #fecaca;
+}
+
+/* --- Feature cards --- */
+.features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  width: 100%;
+}
+
+.feature-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 20px;
+  text-align: center;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.feature-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
+}
+
+.feature-icon {
+  font-size: 1.8rem;
+  margin-bottom: 10px;
+  line-height: 1;
+}
+
+.feature-card h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.feature-card p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* --- Footer --- */
+.footer {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.footer p {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.footer a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.footer a:hover { text-decoration: underline; }
+
+/* --- Utility --- */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  border: 0;
+}
+
+/* --- Responsive --- */
+@media (max-width: 520px) {
+  .form-group {
+    flex-direction: column;
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .submit-btn { width: 100%; padding: 12px; }
+
+  .features { grid-template-columns: 1fr; }
+}

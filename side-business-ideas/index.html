@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- ✏️ EDIT: Update this title to match your brand -->
+  <title>Something New is Coming</title>
+  <meta name="description" content="Something exciting is launching soon. Join the waitlist to be the first to know." />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="bg-gradient"></div>
+
+  <main class="container">
+    <header class="logo-area">
+      <!-- ✏️ EDIT: Replace with your logo or brand name -->
+      <div class="logo">● YourBrand</div>
+    </header>
+
+    <section class="hero">
+      <!-- ✏️ EDIT: Main headline -->
+      <h1 class="headline">Something New is Coming</h1>
+
+      <!-- ✏️ EDIT: Subheadline — describe what you're building in one sentence -->
+      <p class="subheadline">
+        We're working on something you're going to love.
+        Be the first to know when we launch.
+      </p>
+
+      <!-- Email Signup Form powered by Formspree -->
+      <!-- ✏️ EDIT: Replace YOUR_FORM_ID with your Formspree form ID (see SETUP.md) -->
+      <form
+        id="signup-form"
+        action="https://formspree.io/f/YOUR_FORM_ID"
+        method="POST"
+        class="signup-form"
+        novalidate
+      >
+        <div class="form-group">
+          <label for="email" class="sr-only">Email address</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="Enter your email address"
+            required
+            autocomplete="email"
+            class="email-input"
+          />
+          <button type="submit" class="submit-btn">
+            <span class="btn-text">Notify Me</span>
+            <span class="btn-loading" aria-hidden="true">...</span>
+          </button>
+        </div>
+        <p class="form-note">No spam, ever. Unsubscribe anytime.</p>
+      </form>
+
+      <!-- Success / Error messages (shown by JS) -->
+      <div id="form-success" class="message message--success" hidden>
+        🎉 You're on the list! We'll be in touch soon.
+      </div>
+      <div id="form-error" class="message message--error" hidden>
+        Something went wrong. Please try again or email us directly.
+      </div>
+    </section>
+
+    <!-- ✏️ EDIT: Optionally add 2–3 feature teaser cards below -->
+    <section class="features">
+      <div class="feature-card">
+        <!-- ✏️ EDIT icon, title, and description -->
+        <div class="feature-icon">⚡</div>
+        <h3>Fast</h3>
+        <p>Built for speed from day one.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎯</div>
+        <h3>Focused</h3>
+        <p>Designed to solve one thing really well.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💡</div>
+        <h3>Simple</h3>
+        <p>No bloat. No complexity. Just results.</p>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <!-- ✏️ EDIT: Update your name / company and contact email -->
+      <p>&copy; <span id="year"></span> YourBrand. All rights reserved.</p>
+      <p><a href="mailto:hello@yourdomain.com">hello@yourdomain.com</a></p>
+    </footer>
+  </main>
+
+  <script src="main.js"></script>
+</body>
+</html>

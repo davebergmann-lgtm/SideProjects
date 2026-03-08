@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% block title %}Sync / Import — Swimming Stats{% endblock %}
+
+{% block content %}
+
+<div class="d-flex align-items-center mb-4">
+  <h1 class="page-title mb-0"><i class="bi bi-cloud-upload me-2"></i>Sync &amp; Import</h1>
+</div>
+
+<div class="row g-4 mb-4">
+
+  <!-- ── Health Connect (primary) ── -->
+  <div class="col-12 col-lg-7">
+    <div class="chart-card h-100">
+      <div class="chart-title"><i class="bi bi-phone me-2"></i>Android Health Connect (Recommended)</div>
+      <p class="text-muted small">
+        Samsung Health automatically syncs to Google Health Connect on Android.
+        Use any of the methods below to push your data to this dashboard.
+      </p>
+
+      <div class="setup-step">
+        <div class="step-num">1</div>
+        <div>
+          <strong>Enable Health Connect sync in Samsung Health</strong><br>
+          <span class="text-muted small">
+            Samsung Health → Settings → Connected services → Health Connect → Allow all permissions.
+          </span>
+        </div>
+      </div>
+
+      <div class="setup-step">
+        <div class="step-num">2</div>
+        <div>
+          <strong>Choose a sync method</strong><br>
+          <span class="text-muted small">
+            Pick the easiest option for you:
+          </span>
+          <div class="mt-2">
+            <div class="method-tab active" id="tab-tasker" onclick="showMethod('tasker')">Tasker (Easiest)</div>
+            <div class="method-tab" id="tab-http" onclick="showMethod('http')">HTTP shortcut app</div>
+            <div class="method-tab" id="tab-manual" onclick="showMethod('manual')">Manual POST</div>
+          </div>
+
+          <!-- Tasker instructions -->
+          <div id="method-tasker" class="method-body mt-3">
+            <p class="text-muted small mb-2">
+              Tasker can read Health Connect and POST to this server every day at 5 PM automatically.
+            </p>
+            <ol class="small text-muted">
+              <li>Install <strong>Tasker</strong> and <strong>AutoHealth</strong> plugin from the Play Store.</li>
+              <li>Create a new <strong>Profile → Time → 17:00 every day</strong>.</li>
+              <li>Add a Task with these actions:
+                <pre class="code-block mt-1">AutoHealth → Get Exercises
+  Type: Swimming (Pool)
+  From: %last_sync_time
+  To: now
+
+HTTP Request
+  Method: POST
+  URL: http://YOUR_PC_IP:5000/api/sync
+  Body: (AutoHealth JSON output — see README)
+  Content-Type: application/json</pre>
+              </li>
+              <li>Your PC and phone must be on the same Wi-Fi network.</li>
+            </ol>
+            <p class="small text-muted">
+              Find your PC IP: open a terminal and run <code>hostname -I</code> (Linux) or <code>ipconfig</code> (Windows).
+            </p>
+          </div>
+
+          <!-- HTTP Shortcut instructions -->
+          <div id="method-http" class="method-body mt-3" style="display:none">
+            <ol class="small text-muted">
+              <li>Install <strong>HTTP Shortcuts</strong> from the Play Store.</li>
+              <li>Create a new shortcut:
+                <ul>
+                  <li>Method: POST</li>
+                  <li>URL: <code>http://YOUR_PC_IP:5000/api/sync</code></li>
+                  <li>Body: paste workout JSON (see format below)</li>
+                </ul>
+              </li>
+              <li>Add it to your home screen or schedule with Tasker.</li>
+            </ol>
+          </div>
+
+          <!-- Manual POST instructions -->
+          <div id="method-manual" class="method-body mt-3" style="display:none">
+            <p class="small text-muted">POST a JSON array to <code>/api/sync</code>:</p>
+            <pre class="code-block">curl -X POST http://localhost:5000/api/sync \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": "health_connect",
+    "workouts": [{
+      "id": "uuid-here",
+      "startTime": "2024-01-15T07:00:00Z",
+      "endTime":   "2024-01-15T08:00:00Z",
+      "distanceMeters": 2000,
+      "energyKcal": 450,
+      "laps": 40,
+      "avgHeartRateBpm": 140,
+      "maxHeartRateBpm": 165,
+      "strokeType": "FREESTYLE",
+      "poolLengthMeters": 50
+    }]
+  }'</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="setup-step">
+        <div class="step-num">3</div>
+        <div>
+          <strong>Automatic daily sync at 5 PM</strong><br>
+          <span class="text-muted small">
+            The dashboard scheduler runs every day at 17:00 to aggregate any new data
+            received from your phone. You can also trigger it manually:
+          </span>
+          <button class="btn btn-sm btn-outline-primary mt-2" onclick="triggerSync()">
+            <i class="bi bi-arrow-clockwise me-1"></i>Trigger Aggregation Now
+          </button>
+          <span id="sync-status" class="ms-2 small text-muted"></span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── API Endpoint info ── -->
+  <div class="col-12 col-lg-5">
+    <div class="chart-card h-100">
+      <div class="chart-title"><i class="bi bi-braces me-2"></i>API Endpoint</div>
+      <p class="small text-muted">Your dashboard exposes a REST API at:</p>
+      <pre class="code-block">POST http://localhost:5000/api/sync</pre>
+      <p class="small text-muted mt-2">Full JSON field reference:</p>
+      <pre class="code-block small">{
+  "source": "health_connect",    // string
+  "workouts": [
+    {
+      "id":               string,   // HC record UUID
+      "startTime":        ISO-8601, // required
+      "endTime":          ISO-8601, // required
+      "distanceMeters":   number,
+      "energyKcal":       number,
+      "laps":             integer,
+      "avgHeartRateBpm":  number,
+      "maxHeartRateBpm":  number,
+      "strokeType":       string,   // FREESTYLE etc.
+      "poolLengthMeters": number    // 25 or 50
+    }
+  ]
+}</pre>
+      <p class="small text-muted mt-2">Other endpoints:</p>
+      <ul class="small text-muted">
+        <li><code>GET /api/stats</code> — all timelines as JSON</li>
+        <li><code>GET /api/workouts</code> — paginated workout list</li>
+        <li><code>GET /api/last-sync</code> — last sync log entry</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Sync log ── -->
+<div class="chart-card mb-4">
+  <div class="chart-title"><i class="bi bi-journal-text me-2"></i>Sync History</div>
+  {% if logs %}
+  <div class="table-responsive">
+    <table class="table table-dark table-hover table-sm align-middle">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Source</th>
+          <th>Added</th>
+          <th>Skipped</th>
+          <th>Status</th>
+          <th>Message</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td class="text-nowrap">{{ log.synced_at[:16].replace('T', ' ') }}</td>
+          <td><span class="badge bg-secondary">{{ log.source }}</span></td>
+          <td class="text-success">{{ log.workouts_added }}</td>
+          <td class="text-warning">{{ log.workouts_skipped }}</td>
+          <td>
+            <span class="badge {{ 'bg-success' if log.status == 'success' else 'bg-danger' }}">
+              {{ log.status }}
+            </span>
+          </td>
+          <td class="small text-muted">{{ log.message }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="text-muted text-center py-4">No sync history yet.</p>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showMethod(name) {
+  ['tasker','http','manual'].forEach(m => {
+    document.getElementById('method-' + m).style.display = m === name ? 'block' : 'none';
+    document.getElementById('tab-' + m).classList.toggle('active', m === name);
+  });
+}
+
+async function triggerSync() {
+  const el = document.getElementById('sync-status');
+  el.textContent = 'Running…';
+  try {
+    const res = await fetch('/api/trigger-sync', { method: 'POST' });
+    const data = await res.json();
+    el.textContent = data.message || 'Done!';
+  } catch (e) {
+    el.textContent = 'Error: ' + e.message;
+  }
+}
+</script>
+{% endblock %}

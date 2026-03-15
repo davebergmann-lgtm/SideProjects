@@ -1,17 +1,57 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { useLists } from "@/contexts/ListsContext";
+import { useLists, type SavedShow } from "@/contexts/ListsContext";
+
+type SortField = "added" | "name" | "network" | "date";
+type SortDir = "asc" | "desc";
 
 export default function ListDetailPage() {
   const params = useParams();
   const router = useRouter();
   const listId = params.id as string;
   const { lists, removeShowFromList, deleteList } = useLists();
+  const [sortField, setSortField] = useState<SortField>("added");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   const list = lists.find((l) => l.id === listId);
+
+  const sortedShows = useMemo(() => {
+    if (!list) return [];
+    const shows = [...list.shows];
+    shows.sort((a: SavedShow, b: SavedShow) => {
+      let cmp = 0;
+      switch (sortField) {
+        case "name":
+          cmp = a.name.localeCompare(b.name);
+          break;
+        case "network":
+          cmp = (a.network || "").localeCompare(b.network || "");
+          break;
+        case "date":
+          cmp = (a.premiered || "").localeCompare(b.premiered || "");
+          break;
+        case "added":
+        default:
+          cmp = (a.addedAt || "").localeCompare(b.addedAt || "");
+          break;
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return shows;
+  }, [list, sortField, sortDir]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir(field === "name" || field === "network" ? "asc" : "desc");
+    }
+  };
 
   if (!list) {
     return (
@@ -58,7 +98,33 @@ export default function ListDetailPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {list.shows.map((show) => {
+          {/* Sort controls */}
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-slate-400">Sort by:</span>
+            {([
+              ["added", "Date Added"],
+              ["name", "Name"],
+              ["network", "Network"],
+              ["date", "Premiere Date"],
+            ] as const).map(([field, label]) => (
+              <button
+                key={field}
+                onClick={() => handleSort(field)}
+                className={`px-3 py-1.5 rounded-md transition-colors ${
+                  sortField === field
+                    ? "bg-blue-600 text-white"
+                    : "bg-[#1e293b] text-slate-300 hover:bg-[#334155]"
+                }`}
+              >
+                {label}
+                {sortField === field && (
+                  <span className="ml-1">{sortDir === "asc" ? "\u2191" : "\u2193"}</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {sortedShows.map((show) => {
             const statusColor =
               show.status === "Running"
                 ? "text-green-400"

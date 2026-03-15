@@ -14,6 +14,8 @@ export default function Navbar() {
 
   const links = [
     { href: "/", label: "Search" },
+    { href: "/dashboard", label: "Dashboard" },
+    { href: "/calendar", label: "Calendar" },
     { href: "/schedule", label: "Schedule" },
     { href: "/lists", label: "My Lists" },
   ];

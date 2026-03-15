@@ -1,13 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useNotifications } from "@/contexts/NotificationContext";
+import SyncModal from "@/components/SyncModal";
 
 export default function Navbar() {
   const pathname = usePathname();
   const { settings, toggleNotifications, requestPermission, permissionState } =
     useNotifications();
+  const [syncOpen, setSyncOpen] = useState(false);
 
   const links = [
     { href: "/", label: "Search" },
@@ -48,6 +51,17 @@ export default function Navbar() {
               ))}
             </div>
           </div>
+          <div className="flex items-center gap-2">
+          <button
+            onClick={() => setSyncOpen(true)}
+            className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-[#334155] hover:text-white transition-colors"
+            title="Sync across devices"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+              <path fillRule="evenodd" d="M4.755 10.059a7.5 7.5 0 0112.548-3.364l1.903 1.903h-3.183a.75.75 0 100 1.5h4.992a.75.75 0 00.75-.75V4.356a.75.75 0 00-1.5 0v3.18l-1.9-1.9A9 9 0 003.306 9.67a.75.75 0 101.45.388zm14.49 3.882a7.5 7.5 0 01-12.548 3.364l-1.902-1.903h3.183a.75.75 0 000-1.5H3.986a.75.75 0 00-.75.75v4.992a.75.75 0 001.5 0v-3.18l1.9 1.9a9 9 0 0015.059-4.035.75.75 0 00-1.45-.388z" clipRule="evenodd" />
+            </svg>
+            Sync
+          </button>
           <button
             onClick={handleNotificationToggle}
             className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -83,8 +97,10 @@ export default function Navbar() {
               <span>{settings.enabled ? "On" : "Off"}</span>
             )}
           </button>
+          </div>
         </div>
       </div>
+      <SyncModal open={syncOpen} onClose={() => setSyncOpen(false)} />
     </nav>
   );
 }

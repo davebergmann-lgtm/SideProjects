@@ -31,6 +31,7 @@ interface ListsContextType {
   removeShowFromList: (listId: string, showId: number) => void;
   isShowInList: (listId: string, showId: number) => boolean;
   getListsForShow: (showId: number) => ShowList[];
+  replaceLists: (newLists: ShowList[]) => void;
 }
 
 const ListsContext = createContext<ListsContextType | null>(null);
@@ -110,6 +111,10 @@ export function ListsProvider({ children }: { children: React.ReactNode }) {
     [lists]
   );
 
+  const replaceLists = useCallback((newLists: ShowList[]) => {
+    setLists(newLists);
+  }, []);
+
   if (!loaded) return null;
 
   return (
@@ -123,6 +128,7 @@ export function ListsProvider({ children }: { children: React.ReactNode }) {
         removeShowFromList,
         isShowInList,
         getListsForShow,
+        replaceLists,
       }}
     >
       {children}

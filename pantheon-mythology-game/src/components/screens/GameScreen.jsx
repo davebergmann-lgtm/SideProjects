@@ -3,15 +3,19 @@ import { Button } from '../ui/Button';
 import { ProgressBar } from '../ui/ProgressBar';
 import { questions, DIFFICULTY, MYTHOLOGIES } from '../../data/questions';
 
-const TIMER_DURATION = 30; // seconds for speed mode
+const SPEED_TIMERS = { initiate: 45, adept: 30, scholar: 20, oracle: 15 };
 
 export function GameScreen({ config, player, onComplete, onQuit }) {
+  const timerDuration = config.mode === 'speed'
+    ? (SPEED_TIMERS[config.difficulty] ?? 30)
+    : 30;
+
   const [gameQuestions, setGameQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [revealed, setRevealed] = useState(false);
   const [results, setResults] = useState([]);
-  const [timeLeft, setTimeLeft] = useState(TIMER_DURATION);
+  const [timeLeft, setTimeLeft] = useState(timerDuration);
   const [streak, setStreak] = useState(0);
   const [combo, setCombo] = useState(false);
 
@@ -46,8 +50,8 @@ export function GameScreen({ config, player, onComplete, onQuit }) {
 
   // Reset timer on new question
   useEffect(() => {
-    setTimeLeft(TIMER_DURATION);
-  }, [currentIndex]);
+    setTimeLeft(timerDuration);
+  }, [currentIndex, timerDuration]);
 
   const handleAnswer = useCallback((answer) => {
     if (revealed || !currentQ) return;
@@ -122,7 +126,7 @@ export function GameScreen({ config, player, onComplete, onQuit }) {
             <div className="text-xs text-stone-500">Time</div>
             <ProgressBar
               value={timeLeft}
-              max={TIMER_DURATION}
+              max={timerDuration}
               color={timeLeft <= 10 ? 'red' : 'blue'}
               className="flex-1"
             />

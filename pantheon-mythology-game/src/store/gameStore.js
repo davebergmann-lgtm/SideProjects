@@ -1,5 +1,7 @@
-// Simple state management using localStorage + React state
-const STORAGE_KEY = 'pantheon_player';
+// Multi-profile state management using localStorage
+const PROFILES_KEY = 'pantheon_profiles';
+const ACTIVE_PROFILE_KEY = 'pantheon_active_profile';
+const playerKey = (name) => `pantheon_player_${name}`;
 
 export const defaultPlayer = {
   name: 'Seeker',
@@ -13,20 +15,45 @@ export const defaultPlayer = {
   unlockedMythologies: ['greek', 'norse'],
   achievements: [],
   mythologiesAnswered: {},
+  character: null, // { mythology, characterId, outfitId }
 };
 
-export const loadPlayer = () => {
+export const getProfiles = () => {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? { ...defaultPlayer, ...JSON.parse(saved) } : { ...defaultPlayer };
+    return JSON.parse(localStorage.getItem(PROFILES_KEY) || '[]');
   } catch {
-    return { ...defaultPlayer };
+    return [];
+  }
+};
+
+export const addProfile = (name) => {
+  const profiles = getProfiles();
+  if (!profiles.includes(name)) {
+    profiles.push(name);
+    localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
+  }
+};
+
+export const getActiveProfileName = () =>
+  localStorage.getItem(ACTIVE_PROFILE_KEY) || null;
+
+export const setActiveProfileName = (name) =>
+  localStorage.setItem(ACTIVE_PROFILE_KEY, name);
+
+export const loadPlayer = (name) => {
+  try {
+    const saved = localStorage.getItem(playerKey(name));
+    return saved
+      ? { ...defaultPlayer, ...JSON.parse(saved) }
+      : { ...defaultPlayer, name };
+  } catch {
+    return { ...defaultPlayer, name };
   }
 };
 
 export const savePlayer = (player) => {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(player));
+    localStorage.setItem(playerKey(player.name), JSON.stringify(player));
   } catch {}
 };
 
@@ -48,14 +75,15 @@ export const updatePlayer = (player, result) => {
   updated.streak = result.isCorrect ? updated.streak + 1 : 0;
   updated.bestStreak = Math.max(updated.streak, updated.bestStreak);
 
-  // Track mythologies answered
   if (result.mythology) {
     updated.mythologiesAnswered[result.mythology] =
       (updated.mythologiesAnswered[result.mythology] || 0) + 1;
   }
 
-  // Unlock mythologies based on level
-  const unlocks = { 5: 'egyptian', 10: 'hindu', 15: 'japanese', 20: 'celtic', 25: 'aztec', 30: 'mesopotamian', 35: 'chinese' };
+  const unlocks = {
+    5: 'egyptian', 10: 'hindu', 15: 'japanese',
+    20: 'celtic', 25: 'aztec', 30: 'mesopotamian', 35: 'chinese', 40: 'slavic',
+  };
   if (unlocks[updated.level] && !updated.unlockedMythologies.includes(unlocks[updated.level])) {
     updated.unlockedMythologies.push(unlocks[updated.level]);
     result.newUnlock = unlocks[updated.level];
@@ -65,7 +93,7 @@ export const updatePlayer = (player, result) => {
   return updated;
 };
 
-export const resetPlayer = () => {
-  localStorage.removeItem(STORAGE_KEY);
-  return { ...defaultPlayer };
+export const resetPlayer = (name) => {
+  localStorage.removeItem(playerKey(name));
+  return { ...defaultPlayer, name };
 };

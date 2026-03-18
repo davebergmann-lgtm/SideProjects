@@ -5,14 +5,51 @@ import { GameScreen } from './components/screens/GameScreen';
 import { ResultsScreen } from './components/screens/ResultsScreen';
 import { MultiplayerScreen } from './components/screens/MultiplayerScreen';
 import { ProfileScreen } from './components/screens/ProfileScreen';
-import { loadPlayer, updatePlayer, defaultPlayer } from './store/gameStore';
+import { ProfileSelectScreen } from './components/screens/ProfileSelectScreen';
+import { CharacterCreationScreen } from './components/screens/CharacterCreationScreen';
+import { InstructionsScreen } from './components/screens/InstructionsScreen';
+import {
+  loadPlayer, updatePlayer, savePlayer, defaultPlayer,
+  getActiveProfileName, setActiveProfileName,
+} from './store/gameStore';
+
+function getInitialScreen() {
+  const active = getActiveProfileName();
+  return active ? 'landing' : 'profileSelect';
+}
+
+function getInitialPlayer() {
+  const active = getActiveProfileName();
+  return active ? loadPlayer(active) : null;
+}
 
 export default function App() {
-  const [screen, setScreen] = useState('landing');
-  const [player, setPlayer] = useState(() => loadPlayer());
+  const [screen, setScreen] = useState(getInitialScreen);
+  const [player, setPlayer] = useState(getInitialPlayer);
   const [gameConfig, setGameConfig] = useState(null);
   const [gameResults, setGameResults] = useState(null);
   const [prevPlayer, setPrevPlayer] = useState(null);
+  // Where to return after character creation ('landing' or 'profile')
+  const [characterReturnTo, setCharacterReturnTo] = useState('landing');
+
+  const handleProfileSelect = (name, isNew) => {
+    setActiveProfileName(name);
+    const p = loadPlayer(name);
+    setPlayer(p);
+    if (isNew || !p.character) {
+      setCharacterReturnTo('landing');
+      setScreen('characterCreation');
+    } else {
+      setScreen('landing');
+    }
+  };
+
+  const handleCharacterComplete = (character) => {
+    const updated = { ...player, character };
+    savePlayer(updated);
+    setPlayer(updated);
+    setScreen(characterReturnTo);
+  };
 
   const handleStartSetup = (mode) => {
     setGameConfig({ mode });
@@ -36,8 +73,17 @@ export default function App() {
   }, [player]);
 
   const handleReset = () => {
-    setPlayer({ ...defaultPlayer });
+    const name = player.name;
+    const fresh = { ...defaultPlayer, name };
+    savePlayer(fresh);
+    setPlayer(fresh);
     setScreen('landing');
+  };
+
+  const handleSwitchProfile = () => {
+    setPlayer(null);
+    setActiveProfileName('');
+    setScreen('profileSelect');
   };
 
   const activeConfig = gameConfig
@@ -46,22 +92,36 @@ export default function App() {
 
   return (
     <div className="font-sans antialiased">
-      {screen === 'landing' && (
+      {screen === 'profileSelect' && (
+        <ProfileSelectScreen onSelect={handleProfileSelect} />
+      )}
+      {screen === 'characterCreation' && player && (
+        <CharacterCreationScreen
+          player={player}
+          onComplete={handleCharacterComplete}
+          onBack={characterReturnTo === 'profile' ? () => setScreen('profile') : null}
+        />
+      )}
+      {screen === 'landing' && player && (
         <LandingScreen
           player={player}
           onStart={handleStartSetup}
           onMultiplayer={() => setScreen('multiplayer')}
           onProfile={() => setScreen('profile')}
+          onInstructions={() => setScreen('instructions')}
         />
       )}
-      {screen === 'setup' && (
+      {screen === 'instructions' && (
+        <InstructionsScreen onBack={() => setScreen('landing')} />
+      )}
+      {screen === 'setup' && player && (
         <GameSetupScreen
           player={player}
           onStart={handleStartGame}
           onBack={() => setScreen('landing')}
         />
       )}
-      {screen === 'game' && activeConfig && (
+      {screen === 'game' && activeConfig && player && (
         <GameScreen
           config={activeConfig}
           player={player}
@@ -69,7 +129,7 @@ export default function App() {
           onQuit={() => setScreen('landing')}
         />
       )}
-      {screen === 'results' && gameResults && (
+      {screen === 'results' && gameResults && player && (
         <ResultsScreen
           results={gameResults}
           player={player}
@@ -78,17 +138,22 @@ export default function App() {
           onHome={() => setScreen('landing')}
         />
       )}
-      {screen === 'multiplayer' && (
+      {screen === 'multiplayer' && player && (
         <MultiplayerScreen
           player={player}
           onBack={() => setScreen('landing')}
         />
       )}
-      {screen === 'profile' && (
+      {screen === 'profile' && player && (
         <ProfileScreen
           player={player}
           onBack={() => setScreen('landing')}
           onReset={handleReset}
+          onChangeCharacter={() => {
+            setCharacterReturnTo('profile');
+            setScreen('characterCreation');
+          }}
+          onSwitchProfile={handleSwitchProfile}
         />
       )}
     </div>

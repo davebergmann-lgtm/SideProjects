@@ -3,23 +3,59 @@ import { MYTHOLOGIES } from '../../data/questions';
 
 const MYTH_ICONS = Object.values(MYTHOLOGIES);
 
-export function LandingScreen({ player, onStart, onMultiplayer, onProfile }) {
+export function LandingScreen({ player, onStart, onMultiplayer, onProfile, onInstructions }) {
+  const char = player.character;
+
   return (
     <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col">
       {/* Header */}
       <header className="pt-8 pb-4 text-center relative">
+        <div className="absolute top-4 left-4">
+          <button
+            onClick={onInstructions}
+            className="w-9 h-9 rounded-full bg-stone-900 border border-stone-700 flex items-center justify-center text-stone-400 hover:text-stone-200 hover:border-stone-500 transition-all text-sm font-bold"
+            title="How to Play"
+          >
+            ?
+          </button>
+        </div>
         <div className="absolute top-4 right-4">
           <Button variant="ghost" size="sm" onClick={onProfile}>
-            {player.name} · Lv.{player.level}
+            {char ? (
+              <span className="flex items-center gap-1.5">
+                <CharacterDot char={char} />
+                {player.name} · Lv.{player.level}
+              </span>
+            ) : (
+              `${player.name} · Lv.${player.level}`
+            )}
           </Button>
         </div>
-        <div className="text-6xl mb-1">𓂀</div>
+
+        {/* Character avatar or default logo */}
+        {char ? (
+          <div className="flex flex-col items-center mb-1">
+            <div
+              className="w-16 h-16 rounded-full border-4 flex items-center justify-center text-4xl mx-auto"
+              style={{ borderColor: char.primary, backgroundColor: char.bg }}
+            >
+              {char.emoji}
+            </div>
+          </div>
+        ) : (
+          <div className="text-6xl mb-1">𓂀</div>
+        )}
         <h1 className="text-5xl font-black tracking-widest text-amber-400 drop-shadow-lg">
           PANTHEON
         </h1>
         <p className="text-stone-400 text-sm tracking-widest mt-1 uppercase">
           The Ultimate Mythology Challenge
         </p>
+        {char && (
+          <p className="text-xs mt-1 font-semibold" style={{ color: char.accent }}>
+            {char.name} · {char.outfitName}
+          </p>
+        )}
       </header>
 
       {/* Mythology ribbon */}
@@ -63,7 +99,7 @@ export function LandingScreen({ player, onStart, onMultiplayer, onProfile }) {
           <GameModeCard
             icon="⚡"
             title="Speed Myth"
-            subtitle="30 seconds per question — race the clock"
+            subtitle="Race the clock — time scales with difficulty"
             color="from-blue-900/60 to-stone-900/80"
             border="border-blue-700/40"
             onClick={() => onStart('speed')}
@@ -83,7 +119,10 @@ export function LandingScreen({ player, onStart, onMultiplayer, onProfile }) {
         <div className="w-full max-w-sm bg-stone-900/60 rounded-xl p-3 border border-stone-800 flex justify-around text-center">
           <Stat label="Level" value={player.level} />
           <Stat label="XP" value={player.xp.toLocaleString()} />
-          <Stat label="Correct" value={`${player.questionsAnswered > 0 ? Math.round((player.correctAnswers / player.questionsAnswered) * 100) : 0}%`} />
+          <Stat
+            label="Correct"
+            value={`${player.questionsAnswered > 0 ? Math.round((player.correctAnswers / player.questionsAnswered) * 100) : 0}%`}
+          />
           <Stat label="Streak" value={`🔥${player.bestStreak}`} />
         </div>
       </main>
@@ -92,6 +131,17 @@ export function LandingScreen({ player, onStart, onMultiplayer, onProfile }) {
         Spanning 10+ world mythologies · New questions added weekly
       </footer>
     </div>
+  );
+}
+
+function CharacterDot({ char }) {
+  return (
+    <span
+      className="inline-flex w-4 h-4 rounded-full items-center justify-center text-xs border"
+      style={{ borderColor: char.primary, backgroundColor: char.bg }}
+    >
+      {char.emoji}
+    </span>
   );
 }
 

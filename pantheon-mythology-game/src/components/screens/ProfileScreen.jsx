@@ -2,9 +2,13 @@ import { useState } from 'react';
 import { Button } from '../ui/Button';
 import { ProgressBar } from '../ui/ProgressBar';
 import { MYTHOLOGIES, ACHIEVEMENTS } from '../../data/questions';
-import { xpForLevel, resetPlayer } from '../../store/gameStore';
+import { xpForLevel } from '../../store/gameStore';
 
-export function ProfileScreen({ player, onBack, onReset }) {
+function resetPlayer(name) {
+  try { localStorage.removeItem(`pantheon_player_${name}`); } catch {}
+}
+
+export function ProfileScreen({ player, onBack, onReset, onChangeCharacter, onSwitchProfile }) {
   const [confirmReset, setConfirmReset] = useState(false);
   const xpToNext = xpForLevel(player.level + 1);
   const xpProgress = player.xp - xpForLevel(player.level);
@@ -23,8 +27,25 @@ export function ProfileScreen({ player, onBack, onReset }) {
       <main className="px-5 py-5 max-w-lg mx-auto w-full space-y-5 pb-10">
         {/* Avatar & Level */}
         <div className="bg-stone-900/80 rounded-2xl border border-stone-800 p-5 text-center">
-          <div className="text-6xl mb-2">𓂀</div>
+          {player.character ? (
+            <div
+              className="w-20 h-20 rounded-full border-4 flex items-center justify-center text-5xl mx-auto mb-2"
+              style={{
+                borderColor: player.character.primary,
+                backgroundColor: player.character.bg,
+              }}
+            >
+              {player.character.emoji}
+            </div>
+          ) : (
+            <div className="text-6xl mb-2">𓂀</div>
+          )}
           <div className="text-2xl font-black text-stone-100">{player.name}</div>
+          {player.character && (
+            <div className="text-xs font-semibold mt-0.5" style={{ color: player.character.accent }}>
+              {player.character.name} · {player.character.outfitName}
+            </div>
+          )}
           <div className="text-amber-400 text-lg font-bold mt-1">Level {player.level} Seeker</div>
 
           <div className="mt-3 space-y-1">
@@ -34,6 +55,15 @@ export function ProfileScreen({ player, onBack, onReset }) {
             </div>
             <ProgressBar value={xpProgress} max={xpNeeded} color="amber" />
           </div>
+
+          {onChangeCharacter && (
+            <button
+              onClick={onChangeCharacter}
+              className="mt-3 text-xs text-stone-500 hover:text-amber-400 transition-colors border border-stone-700 hover:border-amber-600/50 rounded-full px-3 py-1"
+            >
+              ✦ Change Champion
+            </button>
+          )}
         </div>
 
         {/* Stats grid */}
@@ -103,8 +133,15 @@ export function ProfileScreen({ player, onBack, onReset }) {
           </div>
         )}
 
+        {/* Switch Profile */}
+        {onSwitchProfile && (
+          <Button variant="ghost" size="sm" onClick={onSwitchProfile} className="w-full">
+            Switch Profile
+          </Button>
+        )}
+
         {/* Reset */}
-        <div className="pt-2">
+        <div className="pt-1">
           {!confirmReset ? (
             <Button variant="ghost" size="sm" onClick={() => setConfirmReset(true)} className="w-full">
               Reset Progress
@@ -113,7 +150,7 @@ export function ProfileScreen({ player, onBack, onReset }) {
             <div className="space-y-2">
               <p className="text-red-400 text-sm text-center">Are you sure? All progress will be lost.</p>
               <div className="flex gap-2">
-                <Button variant="danger" className="flex-1" onClick={() => { resetPlayer(); onReset(); }}>
+                <Button variant="danger" className="flex-1" onClick={() => { resetPlayer(player.name); onReset(); }}>
                   Yes, Reset
                 </Button>
                 <Button variant="ghost" className="flex-1" onClick={() => setConfirmReset(false)}>

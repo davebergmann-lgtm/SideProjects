@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
   const redis = getRedis();
   if (!redis) {
     return NextResponse.json(
-      { error: "Sync is not configured. See setup instructions." },
+      { error: "Sync is not configured. Add KV_REST_API_URL and KV_REST_API_TOKEN environment variables." },
       { status: 503 }
     );
   }
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   const redis = getRedis();
   if (!redis) {
     return NextResponse.json(
-      { error: "Sync is not configured. See setup instructions." },
+      { error: "Sync is not configured. Add KV_REST_API_URL and KV_REST_API_TOKEN environment variables." },
       { status: 503 }
     );
   }

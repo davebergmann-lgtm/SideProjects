@@ -33,7 +33,8 @@ export default function SyncModal({ open, onClose }: SyncModalProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "create", lists }),
       });
-      const data = await res.json();
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : {};
       if (!res.ok) throw new Error(data.error || "Failed to generate code");
       setSyncCode(data.code);
       localStorage.setItem("tv-tracker-sync-code", data.code);
@@ -56,7 +57,8 @@ export default function SyncModal({ open, onClose }: SyncModalProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "save", code: syncCode, lists }),
       });
-      const data = await res.json();
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : {};
       if (!res.ok) throw new Error(data.error || "Failed to save");
       setStatus("Lists uploaded successfully!");
     } catch (err: unknown) {
@@ -77,7 +79,8 @@ export default function SyncModal({ open, onClose }: SyncModalProps) {
     setStatus(null);
     try {
       const res = await fetch(`/api/sync?code=${code}`);
-      const data = await res.json();
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : {};
       if (!res.ok) throw new Error(data.error || "Failed to load");
       replaceLists(data.lists);
       setSyncCode(code);

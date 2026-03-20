@@ -12,6 +12,7 @@ import {
   loadPlayer, updatePlayer, savePlayer, defaultPlayer,
   getActiveProfileName, setActiveProfileName,
 } from './store/gameStore';
+import { savePlayerToCloud, loadPlayerFromCloud } from './store/cloudStore';
 
 function getInitialScreen() {
   const active = getActiveProfileName();
@@ -32,10 +33,23 @@ export default function App() {
   // Where to return after character creation ('landing' or 'profile')
   const [characterReturnTo, setCharacterReturnTo] = useState('landing');
 
-  const handleProfileSelect = (name, isNew) => {
+  // cloudPlayer is provided when the cloud was consulted (new profile or cross-device login)
+  const handleProfileSelect = (name, isNew, cloudPlayer) => {
     setActiveProfileName(name);
-    const p = loadPlayer(name);
+    // Use cloud data if provided, otherwise fall back to local cache
+    const p = cloudPlayer || loadPlayer(name);
     setPlayer(p);
+
+    // Background-sync existing local profiles against the cloud
+    if (!isNew && !cloudPlayer) {
+      loadPlayerFromCloud(name).then(remote => {
+        if (remote) {
+          savePlayer(remote); // update local cache
+          setPlayer(remote);
+        }
+      });
+    }
+
     if (isNew || !p.character) {
       setCharacterReturnTo('landing');
       setScreen('characterCreation');
@@ -47,6 +61,7 @@ export default function App() {
   const handleCharacterComplete = (character) => {
     const updated = { ...player, character };
     savePlayer(updated);
+    savePlayerToCloud(updated); // fire-and-forget cloud sync
     setPlayer(updated);
     setScreen(characterReturnTo);
   };
@@ -67,6 +82,7 @@ export default function App() {
     results.forEach(result => {
       updatedPlayer = updatePlayer(updatedPlayer, result);
     });
+    savePlayerToCloud(updatedPlayer); // fire-and-forget cloud sync
     setPlayer(updatedPlayer);
     setGameResults(results);
     setScreen('results');
@@ -76,6 +92,7 @@ export default function App() {
     const name = player.name;
     const fresh = { ...defaultPlayer, name };
     savePlayer(fresh);
+    savePlayerToCloud(fresh); // sync reset to cloud
     setPlayer(fresh);
     setScreen('landing');
   };

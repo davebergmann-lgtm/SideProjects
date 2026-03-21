@@ -6,7 +6,7 @@ export const CHARACTERS = {
       id: 'zeus',
       name: 'Zeus',
       title: 'King of Olympus',
-      emoji: '⚡',
+      emoji: '🧔‍♂️',
       description: 'Ruler of the gods, wielder of lightning, father of gods and mortals.',
       outfits: [
         { id: 'thunderlord', name: 'Thunderlord', emoji: '⚡', primary: '#f59e0b', bg: '#451a03', accent: '#fbbf24', description: 'Draped in gold, crowned with lightning.' },
@@ -18,7 +18,7 @@ export const CHARACTERS = {
       id: 'athena',
       name: 'Athena',
       title: 'Goddess of Wisdom',
-      emoji: '🦉',
+      emoji: '👩',
       description: 'Goddess of wisdom, war strategy, and crafts. Daughter of Zeus.',
       outfits: [
         { id: 'wisdom_aegis', name: "Wisdom's Aegis", emoji: '🛡️', primary: '#38bdf8', bg: '#0c2a3f', accent: '#7dd3fc', description: 'Bearing the sacred Aegis, adorned with silver.' },
@@ -32,7 +32,7 @@ export const CHARACTERS = {
       id: 'odin',
       name: 'Odin',
       title: 'The Allfather',
-      emoji: '👁️',
+      emoji: '🧙‍♂️',
       description: 'All-knowing ruler of Asgard, seeker of wisdom, master of runes.',
       outfits: [
         { id: 'wanderer', name: 'The Wanderer', emoji: '🐺', primary: '#a8a29e', bg: '#1c1917', accent: '#d6d3d1', description: 'Grey cloak, staff in hand, two ravens near.' },
@@ -44,7 +44,7 @@ export const CHARACTERS = {
       id: 'thor',
       name: 'Thor',
       title: 'God of Thunder',
-      emoji: '🔨',
+      emoji: '🧔',
       description: 'Son of Odin, wielder of Mjolnir, protector of mankind.',
       outfits: [
         { id: 'iron_champion', name: 'Iron Champion', emoji: '⚡', primary: '#f87171', bg: '#450a0a', accent: '#fca5a5', description: 'Red war armor, Mjolnir crackling with power.' },
@@ -58,7 +58,7 @@ export const CHARACTERS = {
       id: 'ra',
       name: 'Ra',
       title: 'The Sun God',
-      emoji: '☀️',
+      emoji: '🫅',
       description: 'God of the sun, creator of all life, sailing the sky in his solar barque.',
       outfits: [
         { id: 'solar_pharaoh', name: 'Solar Pharaoh', emoji: '👑', primary: '#fbbf24', bg: '#451a03', accent: '#fef08a', description: 'Golden pharaonic regalia, sun disk crown.' },
@@ -70,7 +70,7 @@ export const CHARACTERS = {
       id: 'isis',
       name: 'Isis',
       title: 'Mother of Magic',
-      emoji: '🌟',
+      emoji: '👸',
       description: 'Goddess of magic, healing, and motherhood. Devoted protector of all.',
       outfits: [
         { id: 'star_weaver', name: 'Star Weaver', emoji: '⭐', primary: '#60a5fa', bg: '#172554', accent: '#fbbf24', description: 'Night-blue robes dotted with living stars.' },
@@ -84,7 +84,7 @@ export const CHARACTERS = {
       id: 'vishnu',
       name: 'Vishnu',
       title: 'The Preserver',
-      emoji: '🪷',
+      emoji: '🧘',
       description: 'Supreme preserver of the cosmos, blue-skinned deity of protection.',
       outfits: [
         { id: 'blue_cosmic', name: 'Blue Cosmic', emoji: '🌀', primary: '#60a5fa', bg: '#172554', accent: '#fbbf24', description: 'Brilliant blue form, four sacred arms raised.' },
@@ -96,7 +96,7 @@ export const CHARACTERS = {
       id: 'shiva',
       name: 'Shiva',
       title: 'The Destroyer',
-      emoji: '🔱',
+      emoji: '🧘‍♂️',
       description: "God of destruction and transformation. Dancer at creation's end.",
       outfits: [
         { id: 'tandava_dancer', name: 'Tandava Dancer', emoji: '🔥', primary: '#fb923c', bg: '#431407', accent: '#fde68a', description: 'Dancing in the cosmic ring of fire.' },
@@ -110,7 +110,7 @@ export const CHARACTERS = {
       id: 'amaterasu',
       name: 'Amaterasu',
       title: 'Goddess of the Sun',
-      emoji: '⛩️',
+      emoji: '👩‍🦳',
       description: 'Ruler of the heavens, bringer of light, sovereign goddess of the sun.',
       outfits: [
         { id: 'golden_kimono', name: 'Golden Kimono', emoji: '☀️', primary: '#fbbf24', bg: '#451a03', accent: '#fef9c3', description: 'Radiant gold kimono, sunburst obi.' },
@@ -124,7 +124,7 @@ export const CHARACTERS = {
       id: 'morrigan',
       name: 'The Morrígan',
       title: 'Phantom Queen',
-      emoji: '🦅',
+      emoji: '🧝‍♀️',
       description: 'Goddess of fate, war, and death. She who shapes the outcome of battles.',
       outfits: [
         { id: 'battle_crow', name: 'Battle Crow', emoji: '🖤', primary: '#dc2626', bg: '#0c0a09', accent: '#450a0a', description: 'Raven-black feathers, blood-red markings.' },
@@ -138,7 +138,7 @@ export const CHARACTERS = {
       id: 'quetzalcoatl',
       name: 'Quetzalcoatl',
       title: 'Feathered Serpent',
-      emoji: '🌞',
+      emoji: '🦸',
       description: 'The plumed serpent god of wind, air, learning, and the morning star.',
       outfits: [
         { id: 'feathered_serpent', name: 'Feathered Serpent', emoji: '🐍', primary: '#4ade80', bg: '#052e16', accent: '#fbbf24', description: 'Emerald feathers rippling with golden scales.' },
@@ -152,7 +152,7 @@ export const CHARACTERS = {
       id: 'inanna',
       name: 'Inanna',
       title: 'Queen of Heaven',
-      emoji: '🏺',
+      emoji: '👸',
       description: 'Goddess of love, war, and power. Greatest of all Sumerian deities.',
       outfits: [
         { id: 'star_queen', name: 'Star Queen', emoji: '⭐', primary: '#a78bfa', bg: '#2e1065', accent: '#fbbf24', description: 'Lapis lazuli and gold, crown of eight stars.' },
@@ -166,7 +166,7 @@ export const CHARACTERS = {
       id: 'guan_yu',
       name: 'Guan Yu',
       title: 'God of War',
-      emoji: '🐉',
+      emoji: '🥷',
       description: 'Deified general, god of war, righteousness, and brotherhood.',
       outfits: [
         { id: 'red_war_god', name: 'Red War God', emoji: '⚔️', primary: '#ef4444', bg: '#450a0a', accent: '#fbbf24', description: 'Crimson armor, Green Dragon Crescent Blade.' },
@@ -180,7 +180,7 @@ export const CHARACTERS = {
       id: 'perun',
       name: 'Perun',
       title: 'God of Thunder',
-      emoji: '🌲',
+      emoji: '🧔‍♂️',
       description: 'Slavic god of sky, thunder, lightning, storms, and sacred oaks.',
       outfits: [
         { id: 'thunder_oak', name: 'Thunder Oak', emoji: '🌳', primary: '#d97706', bg: '#1c0a00', accent: '#fbbf24', description: 'Oak bark armor, axe crackling with lightning.' },

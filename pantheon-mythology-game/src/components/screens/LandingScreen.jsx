@@ -59,7 +59,7 @@ export function LandingScreen({ player, onStart, onMultiplayer, onProfile, onIns
       </header>
 
       {/* Mythology ribbon */}
-      <div className="flex justify-center gap-3 flex-wrap px-4 py-3">
+      <div className="flex justify-center gap-3 flex-wrap px-4 py-3 pb-5">
         {MYTH_ICONS.map(m => (
           <div
             key={m.id}
@@ -77,7 +77,7 @@ export function LandingScreen({ player, onStart, onMultiplayer, onProfile, onIns
       </div>
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col items-center justify-center gap-6 px-6 -mt-4">
+      <main className="flex-1 flex flex-col items-center justify-center gap-6 px-6">
         {/* Game modes */}
         <div className="w-full max-w-sm grid grid-cols-1 gap-3">
           <GameModeCard
@@ -92,8 +92,8 @@ export function LandingScreen({ player, onStart, onMultiplayer, onProfile, onIns
             icon="☀️"
             title="Daily Oracle"
             subtitle="Today's challenge — compete globally"
-            color="from-yellow-900/60 to-stone-900/80"
-            border="border-yellow-600/40"
+            color="from-teal-900/60 to-stone-900/80"
+            border="border-teal-600/40"
             onClick={() => onStart('daily')}
           />
           <GameModeCard

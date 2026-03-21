@@ -51,13 +51,18 @@ function RoomPanel() {
             { label: "Warm Gray", wall: "#e8e4e0", floor: "#c0b8b0" },
             { label: "White", wall: "#ffffff", floor: "#eeeeee" },
             { label: "Terracotta", wall: "#f5e8df", floor: "#c8a080" },
+            { label: "SW Rhythmic Blue", wall: "#ccdbe5", floor: "#b0c8d4", sw: "SW 6806" },
+            { label: "SW Moonmist", wall: "#c9d9e0", floor: "#b0c4cc", sw: "SW 9144" },
+            { label: "SW Wishful Blue", wall: "#d8dde6", floor: "#c0c8d4", sw: "SW 6813" },
           ].map((p) => (
             <button
               key={p.label}
               onClick={() => { setRoomColor(room.id, "wall", p.wall); setRoomColor(room.id, "floor", p.floor); }}
-              style={{ fontSize: 11, padding: "3px 8px", border: "1px solid #ccc", borderRadius: 12, cursor: "pointer", background: p.wall, color: "#333" }}
+              title={p.sw ? `${p.label} · ${p.sw}` : p.label}
+              style={{ fontSize: 11, padding: "3px 8px", border: "1px solid #ccc", borderRadius: p.sw ? 6 : 12, cursor: "pointer", background: p.wall, color: "#333", lineHeight: 1.3 }}
             >
               {p.label}
+              {p.sw && <div style={{ fontSize: 9, color: "#666", marginTop: 1 }}>{p.sw}</div>}
             </button>
           ))}
         </div>

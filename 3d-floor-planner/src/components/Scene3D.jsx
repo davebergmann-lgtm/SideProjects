@@ -28,7 +28,7 @@ function FloorPlan() {
 }
 
 export default function Scene3D({ canvasRef }) {
-  const { cameraView } = useStore();
+  const { cameraView, isDraggingFurniture } = useStore();
 
   const cameraProps =
     cameraView === "top"
@@ -89,6 +89,7 @@ export default function Scene3D({ canvasRef }) {
 
         <OrbitControls
           makeDefault
+          enabled={!isDraggingFurniture}
           minDistance={5}
           maxDistance={150}
           maxPolarAngle={Math.PI / 2 - 0.05}

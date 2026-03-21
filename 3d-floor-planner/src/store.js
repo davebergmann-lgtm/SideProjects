@@ -20,6 +20,9 @@ export const useStore = create(
       versions: [],
       showLabels: true,
       cameraView: "perspective",
+      isDraggingFurniture: false,
+
+      setIsDraggingFurniture: (val) => set({ isDraggingFurniture: val }),
 
       setRoomColor: (roomId, type, color) =>
         set((state) => ({

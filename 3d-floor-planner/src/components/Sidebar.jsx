@@ -57,7 +57,7 @@ function RoomPanel() {
           ].map((p) => (
             <button
               key={p.label}
-              onClick={() => { setRoomColor(room.id, "wall", p.wall); setRoomColor(room.id, "floor", p.floor); }}
+              onClick={() => { setRoomColor(room.id, "wall", p.wall); }}
               title={p.sw ? `${p.label} · ${p.sw}` : p.label}
               style={{ fontSize: 11, padding: "3px 8px", border: "1px solid #ccc", borderRadius: p.sw ? 6 : 12, cursor: "pointer", background: p.wall, color: "#333", lineHeight: 1.3 }}
             >

@@ -71,7 +71,7 @@ export default function ListDetailPage() {
           <Link href="/lists" className="text-sm text-slate-400 hover:text-white transition-colors">
             &larr; All Lists
           </Link>
-          <h1 className="text-2xl font-bold mt-1">{list.name}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold mt-1">{list.name}</h1>
           <p className="text-slate-400 text-sm">
             {list.shows.length} {list.shows.length === 1 ? "show" : "shows"}
           </p>
@@ -99,8 +99,8 @@ export default function ListDetailPage() {
       ) : (
         <div className="space-y-3">
           {/* Sort controls */}
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-slate-400">Sort by:</span>
+          <div className="flex items-center gap-1.5 sm:gap-2 text-sm flex-wrap">
+            <span className="text-slate-400">Sort:</span>
             {([
               ["added", "Date Added"],
               ["name", "Name"],
@@ -135,10 +135,10 @@ export default function ListDetailPage() {
             return (
               <div
                 key={show.id}
-                className="flex gap-4 bg-[#1e293b] rounded-lg border border-[#334155] overflow-hidden group"
+                className="flex gap-2 sm:gap-4 bg-[#1e293b] rounded-lg border border-[#334155] overflow-hidden group"
               >
-                <Link href={`/show/${show.id}`} className="flex gap-4 flex-1 min-w-0">
-                  <div className="relative w-[80px] min-h-[110px] flex-shrink-0 bg-[#0f172a]">
+                <Link href={`/show/${show.id}`} className="flex gap-2 sm:gap-4 flex-1 min-w-0">
+                  <div className="relative w-[60px] sm:w-[80px] min-h-[84px] sm:min-h-[110px] flex-shrink-0 bg-[#0f172a]">
                     {show.image ? (
                       <Image src={show.image} alt={show.name} fill className="object-cover" sizes="80px" />
                     ) : (
@@ -170,7 +170,7 @@ export default function ListDetailPage() {
                     )}
                   </div>
                 </Link>
-                <div className="flex items-center pr-4">
+                <div className="flex items-center pr-2 sm:pr-4">
                   <button
                     onClick={() => removeShowFromList(list.id, show.id)}
                     className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"

@@ -138,7 +138,7 @@ export default function CalendarPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Weekly Calendar</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">Weekly Calendar</h1>
           <p className="text-slate-400 text-sm mt-1">
             Your saved shows organized by air day (ended shows excluded)
           </p>

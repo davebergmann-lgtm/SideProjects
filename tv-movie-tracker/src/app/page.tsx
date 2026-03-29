@@ -24,12 +24,12 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="space-y-8">
-      <div className="text-center space-y-3 pt-8">
-        <h1 className="text-4xl font-bold">
+    <div className="space-y-6 sm:space-y-8">
+      <div className="text-center space-y-2 sm:space-y-3 pt-4 sm:pt-8">
+        <h1 className="text-2xl sm:text-4xl font-bold">
           Find Your <span className="text-blue-400">Shows</span>
         </h1>
-        <p className="text-slate-400 text-lg">
+        <p className="text-slate-400 text-base sm:text-lg">
           Search for any TV show or movie to see where and when it airs
         </p>
       </div>

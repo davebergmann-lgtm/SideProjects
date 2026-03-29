@@ -25,7 +25,7 @@ export default function ShowCard({ show }: ShowCardProps) {
       href={`/show/${show.id}`}
       className="flex gap-4 bg-[#1e293b] rounded-lg border border-[#334155] hover:border-blue-500/50 transition-all hover:shadow-lg hover:shadow-blue-500/10 overflow-hidden group"
     >
-      <div className="relative w-[100px] min-h-[140px] flex-shrink-0 bg-[#0f172a]">
+      <div className="relative w-[80px] sm:w-[100px] min-h-[112px] sm:min-h-[140px] flex-shrink-0 bg-[#0f172a]">
         {show.image?.medium ? (
           <Image
             src={show.image.medium}
@@ -43,8 +43,8 @@ export default function ShowCard({ show }: ShowCardProps) {
           </div>
         )}
       </div>
-      <div className="py-3 pr-4 flex flex-col justify-center min-w-0">
-        <h3 className="font-semibold text-lg group-hover:text-blue-400 transition-colors truncate">
+      <div className="py-2.5 sm:py-3 pr-3 sm:pr-4 flex flex-col justify-center min-w-0">
+        <h3 className="font-semibold text-base sm:text-lg group-hover:text-blue-400 transition-colors truncate">
           {show.name}
         </h3>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm">

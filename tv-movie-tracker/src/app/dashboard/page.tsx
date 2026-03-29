@@ -202,7 +202,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
+      <h1 className="text-xl sm:text-2xl font-bold">Dashboard</h1>
 
       {/* What's On Tonight / Tomorrow */}
       <section>

@@ -9,7 +9,7 @@ interface SyncModalProps {
 }
 
 export default function SyncModal({ open, onClose }: SyncModalProps) {
-  const { lists, replaceLists } = useLists();
+  const { lists, replaceLists, syncStatus } = useLists();
   const [syncCode, setSyncCode] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("tv-tracker-sync-code") || "";
@@ -38,31 +38,9 @@ export default function SyncModal({ open, onClose }: SyncModalProps) {
       if (!res.ok) throw new Error(data.error || "Failed to generate code");
       setSyncCode(data.code);
       localStorage.setItem("tv-tracker-sync-code", data.code);
-      setStatus("Sync code created! Your lists have been uploaded.");
+      setStatus("Sync code created! Auto-sync is now active.");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to generate code");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePushToServer = async () => {
-    if (!syncCode) return;
-    setLoading(true);
-    setError(null);
-    setStatus(null);
-    try {
-      const res = await fetch("/api/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "save", code: syncCode, lists }),
-      });
-      const text = await res.text();
-      const data = text ? JSON.parse(text) : {};
-      if (!res.ok) throw new Error(data.error || "Failed to save");
-      setStatus("Lists uploaded successfully!");
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to save");
     } finally {
       setLoading(false);
     }
@@ -85,13 +63,29 @@ export default function SyncModal({ open, onClose }: SyncModalProps) {
       replaceLists(data.lists);
       setSyncCode(code);
       localStorage.setItem("tv-tracker-sync-code", code);
-      setStatus(`Loaded ${data.lists.length} list(s) from sync code ${code}!`);
+      setStatus(`Loaded ${data.lists.length} list(s). Auto-sync is now active.`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to load");
     } finally {
       setLoading(false);
     }
   };
+
+  const syncStatusLabel =
+    syncStatus === "saving"
+      ? "Syncing..."
+      : syncStatus === "loading"
+      ? "Loading..."
+      : syncStatus === "error"
+      ? "Sync error"
+      : "Auto-sync active";
+
+  const syncStatusColor =
+    syncStatus === "error"
+      ? "text-red-400"
+      : syncStatus === "saving" || syncStatus === "loading"
+      ? "text-yellow-400"
+      : "text-green-400";
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
@@ -126,24 +120,16 @@ export default function SyncModal({ open, onClose }: SyncModalProps) {
                 {syncCode}
               </span>
             </div>
-            <p className="text-slate-500 text-xs mt-2">
-              Enter this code on your other devices to load your lists.
-            </p>
-            <div className="flex gap-2 mt-3">
-              <button
-                onClick={handlePushToServer}
-                disabled={loading}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-              >
-                {loading ? "Saving..." : "Upload Lists"}
-              </button>
-              <button
-                onClick={() => handlePullFromServer(syncCode)}
-                disabled={loading}
-                className="flex-1 bg-[#334155] hover:bg-[#475569] disabled:opacity-50 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-              >
-                {loading ? "Loading..." : "Download Lists"}
-              </button>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-slate-500 text-xs">
+                Enter this code on your other devices to stay in sync.
+              </p>
+              <span className={`text-xs font-medium ${syncStatusColor}`}>
+                {syncStatusLabel}
+              </span>
+            </div>
+            <div className="bg-[#0f172a] rounded-lg p-3 mt-3 text-xs text-slate-400">
+              Changes sync automatically. Edits on this device upload within 2 seconds. Updates from other devices appear within 30 seconds.
             </div>
           </div>
         )}
@@ -152,7 +138,7 @@ export default function SyncModal({ open, onClose }: SyncModalProps) {
         {!syncCode && (
           <div className="mb-5">
             <p className="text-slate-300 text-sm mb-3">
-              Generate a sync code to share your lists across devices.
+              Generate a sync code to automatically keep your lists in sync across devices.
             </p>
             <button
               onClick={handleGenerateCode}
@@ -193,7 +179,7 @@ export default function SyncModal({ open, onClose }: SyncModalProps) {
             onClick={() => {
               setSyncCode("");
               localStorage.removeItem("tv-tracker-sync-code");
-              setStatus("Sync code removed. Your local lists are unchanged.");
+              setStatus("Sync disconnected. Your local lists are unchanged.");
             }}
             className="mt-4 text-slate-500 hover:text-slate-300 text-xs underline"
           >

@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
 
 function getRedis() {
-  const url = process.env.KV_REST_API_URL;
-  const token = process.env.KV_REST_API_TOKEN;
+  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) {
     return null;
   }
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
   const redis = getRedis();
   if (!redis) {
     return NextResponse.json(
-      { error: "Sync is not configured. See setup instructions." },
+      { error: "Sync is not configured. Add KV_REST_API_URL and KV_REST_API_TOKEN environment variables." },
       { status: 503 }
     );
   }
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   const redis = getRedis();
   if (!redis) {
     return NextResponse.json(
-      { error: "Sync is not configured. See setup instructions." },
+      { error: "Sync is not configured. Add KV_REST_API_URL and KV_REST_API_TOKEN environment variables." },
       { status: 503 }
     );
   }

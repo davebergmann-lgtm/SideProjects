@@ -90,7 +90,7 @@ export default function ShowPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row gap-6">
-        <div className="relative w-[200px] h-[280px] flex-shrink-0 bg-[#1e293b] rounded-lg overflow-hidden mx-auto md:mx-0">
+        <div className="relative w-[140px] h-[196px] sm:w-[200px] sm:h-[280px] flex-shrink-0 bg-[#1e293b] rounded-lg overflow-hidden mx-auto md:mx-0">
           {show.image?.original ? (
             <Image
               src={show.image.original}
@@ -112,7 +112,7 @@ export default function ShowPage() {
 
         <div className="flex-1 space-y-4">
           <div>
-            <h1 className="text-3xl font-bold">{show.name}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">{show.name}</h1>
             <div className="flex flex-wrap items-center gap-3 mt-2">
               <span className={`px-2.5 py-1 rounded-md text-sm font-medium ${statusColor}`}>
                 {show.status}
@@ -250,7 +250,7 @@ export default function ShowPage() {
                       return (
                         <div
                           key={ep.id}
-                          className={`px-4 py-3 flex items-center justify-between gap-4 ${
+                          className={`px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-4 ${
                             isToday ? "bg-blue-500/10" : ""
                           }`}
                         >

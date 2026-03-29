@@ -57,7 +57,7 @@ export default function SchedulePage() {
           >
             &larr;
           </button>
-          <div className="text-center min-w-[200px]">
+          <div className="text-center min-w-[160px] sm:min-w-[200px]">
             <div className="font-semibold">{formatDisplayDate(currentDate)}</div>
             {dayLabel && <div className="text-sm text-blue-400">{dayLabel}</div>}
           </div>
@@ -111,7 +111,7 @@ export default function SchedulePage() {
               href={`/show/${entry.show.id}`}
               className="flex gap-3 bg-[#1e293b] rounded-lg border border-[#334155] hover:border-blue-500/50 transition-all overflow-hidden group"
             >
-              <div className="relative w-[60px] min-h-[80px] flex-shrink-0 bg-[#0f172a]">
+              <div className="relative w-[50px] sm:w-[60px] min-h-[70px] sm:min-h-[80px] flex-shrink-0 bg-[#0f172a]">
                 {entry.show.image?.medium ? (
                   <Image
                     src={entry.show.image.medium}

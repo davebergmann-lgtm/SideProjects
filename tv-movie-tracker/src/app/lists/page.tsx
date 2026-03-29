@@ -32,17 +32,17 @@ export default function ListsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">My Lists</h1>
+        <h1 className="text-xl sm:text-2xl font-bold">My Lists</h1>
       </div>
 
       {/* Create new list */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 w-full sm:max-w-md">
         <input
           type="text"
           value={newListName}
           onChange={(e) => setNewListName(e.target.value)}
           placeholder="Create a new list..."
-          className="flex-1 max-w-md px-4 py-3 bg-[#1e293b] border border-[#334155] rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 min-w-0 px-3 sm:px-4 py-2.5 sm:py-3 bg-[#1e293b] border border-[#334155] rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
           onKeyDown={(e) => {
             if (e.key === "Enter") handleCreate();
           }}

@@ -1,10 +1,10 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
-import type { Show } from "@/lib/tvmaze";
 
 export interface SavedShow {
   id: number;
+  type?: "show" | "movie";
   name: string;
   network: string;
   airTime: string;
@@ -13,6 +13,11 @@ export interface SavedShow {
   premiered: string | null;
   genres: string[];
   addedAt: string;
+  // Movie-specific fields
+  releaseDate?: string | null;
+  overview?: string | null;
+  voteAverage?: number | null;
+  runtime?: number | null;
 }
 
 export interface ShowList {
@@ -28,9 +33,9 @@ interface ListsContextType {
   deleteList: (listId: string) => void;
   renameList: (listId: string, name: string) => void;
   addShowToList: (listId: string, show: SavedShow) => void;
-  removeShowFromList: (listId: string, showId: number) => void;
-  isShowInList: (listId: string, showId: number) => boolean;
-  getListsForShow: (showId: number) => ShowList[];
+  removeShowFromList: (listId: string, showId: number, itemType?: "show" | "movie") => void;
+  isShowInList: (listId: string, showId: number, itemType?: "show" | "movie") => boolean;
+  getListsForShow: (showId: number, itemType?: "show" | "movie") => ShowList[];
   replaceLists: (newLists: ShowList[]) => void;
   syncStatus: "idle" | "saving" | "loading" | "error";
 }
@@ -39,12 +44,18 @@ const ListsContext = createContext<ListsContextType | null>(null);
 
 const STORAGE_KEY = "tv-tracker-lists";
 const SYNC_CODE_KEY = "tv-tracker-sync-code";
-const AUTO_SAVE_DELAY = 2000; // 2 seconds debounce
-const POLL_INTERVAL = 30000; // 30 seconds
+const AUTO_SAVE_DELAY = 2000;
+const POLL_INTERVAL = 30000;
 
 function getSyncCode(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(SYNC_CODE_KEY) || null;
+}
+
+function matchItem(item: SavedShow, id: number, itemType?: "show" | "movie"): boolean {
+  const type = itemType || "show";
+  const savedType = item.type || "show";
+  return item.id === id && savedType === type;
 }
 
 export function ListsProvider({ children }: { children: React.ReactNode }) {
@@ -60,7 +71,13 @@ export function ListsProvider({ children }: { children: React.ReactNode }) {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
-        setLists(JSON.parse(stored));
+        const parsed = JSON.parse(stored) as ShowList[];
+        // Normalize: ensure all items have a type field
+        const normalized = parsed.map((list) => ({
+          ...list,
+          shows: list.shows.map((s) => ({ ...s, type: s.type || ("show" as const) })),
+        }));
+        setLists(normalized);
       } catch {}
     }
     setLoaded(true);
@@ -98,7 +115,6 @@ export function ListsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!loaded) return;
 
-    // Skip if this change came from a remote pull
     if (isRemoteUpdateRef.current) {
       isRemoteUpdateRef.current = false;
       return;
@@ -108,7 +124,6 @@ export function ListsProvider({ children }: { children: React.ReactNode }) {
     if (!code) return;
 
     const currentJson = JSON.stringify(lists);
-    // Skip if nothing actually changed
     if (currentJson === lastSavedJsonRef.current) return;
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -152,7 +167,6 @@ export function ListsProvider({ children }: { children: React.ReactNode }) {
         const remoteJson = JSON.stringify(data.lists);
         const localJson = JSON.stringify(lists);
 
-        // Only update if remote is different from local
         if (remoteJson !== localJson) {
           lastSavedJsonRef.current = remoteJson;
           isRemoteUpdateRef.current = true;
@@ -187,32 +201,32 @@ export function ListsProvider({ children }: { children: React.ReactNode }) {
     setLists((prev) =>
       prev.map((l) => {
         if (l.id !== listId) return l;
-        if (l.shows.some((s) => s.id === show.id)) return l;
-        return { ...l, shows: [...l.shows, show] };
+        if (l.shows.some((s) => matchItem(s, show.id, show.type))) return l;
+        return { ...l, shows: [...l.shows, { ...show, type: show.type || "show" }] };
       })
     );
   }, []);
 
-  const removeShowFromList = useCallback((listId: string, showId: number) => {
+  const removeShowFromList = useCallback((listId: string, showId: number, itemType?: "show" | "movie") => {
     setLists((prev) =>
       prev.map((l) => {
         if (l.id !== listId) return l;
-        return { ...l, shows: l.shows.filter((s) => s.id !== showId) };
+        return { ...l, shows: l.shows.filter((s) => !matchItem(s, showId, itemType)) };
       })
     );
   }, []);
 
   const isShowInList = useCallback(
-    (listId: string, showId: number) => {
+    (listId: string, showId: number, itemType?: "show" | "movie") => {
       const list = lists.find((l) => l.id === listId);
-      return list?.shows.some((s) => s.id === showId) ?? false;
+      return list?.shows.some((s) => matchItem(s, showId, itemType)) ?? false;
     },
     [lists]
   );
 
   const getListsForShow = useCallback(
-    (showId: number) => {
-      return lists.filter((l) => l.shows.some((s) => s.id === showId));
+    (showId: number, itemType?: "show" | "movie") => {
+      return lists.filter((l) => l.shows.some((s) => matchItem(s, showId, itemType)));
     },
     [lists]
   );

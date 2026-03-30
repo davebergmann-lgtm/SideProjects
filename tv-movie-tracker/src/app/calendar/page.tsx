@@ -28,7 +28,9 @@ export default function CalendarPage() {
 
   useEffect(() => {
     const allShowIds = new Set<number>();
-    lists.forEach((list) => list.shows.forEach((s) => allShowIds.add(s.id)));
+    lists.forEach((list) => list.shows.forEach((s) => {
+      if (!s.type || s.type === "show") allShowIds.add(s.id);
+    }));
 
     if (allShowIds.size === 0) {
       setSchedule({});

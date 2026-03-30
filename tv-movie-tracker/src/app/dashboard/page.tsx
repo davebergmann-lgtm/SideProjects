@@ -50,8 +50,11 @@ export default function DashboardPage() {
   const [loadingTonight, setLoadingTonight] = useState(true);
   const [loadingStatus, setLoadingStatus] = useState(true);
 
+  // Only include TV shows (not movies) for TVMaze-based dashboard features
   const allShowIds = new Set<number>();
-  lists.forEach((list) => list.shows.forEach((s) => allShowIds.add(s.id)));
+  lists.forEach((list) => list.shows.forEach((s) => {
+    if (!s.type || s.type === "show") allShowIds.add(s.id);
+  }));
 
   // Fetch "what's on tonight/tomorrow" by checking the TVMaze schedule
   useEffect(() => {

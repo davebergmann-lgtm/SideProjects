@@ -73,7 +73,7 @@ export default function ListDetailPage() {
           </Link>
           <h1 className="text-xl sm:text-2xl font-bold mt-1">{list.name}</h1>
           <p className="text-slate-400 text-sm">
-            {list.shows.length} {list.shows.length === 1 ? "show" : "shows"}
+            {list.shows.length} {list.shows.length === 1 ? "item" : "items"}
           </p>
         </div>
         <button
@@ -134,10 +134,10 @@ export default function ListDetailPage() {
 
             return (
               <div
-                key={show.id}
+                key={`${show.type || "show"}-${show.id}`}
                 className="flex gap-2 sm:gap-4 bg-[#1e293b] rounded-lg border border-[#334155] overflow-hidden group"
               >
-                <Link href={`/show/${show.id}`} className="flex gap-2 sm:gap-4 flex-1 min-w-0">
+                <Link href={show.type === "movie" ? `/movie/${show.id}` : `/show/${show.id}`} className="flex gap-2 sm:gap-4 flex-1 min-w-0">
                   <div className="relative w-[60px] sm:w-[80px] min-h-[84px] sm:min-h-[110px] flex-shrink-0 bg-[#0f172a]">
                     {show.image ? (
                       <Image src={show.image} alt={show.name} fill className="object-cover" sizes="80px" />
@@ -172,7 +172,7 @@ export default function ListDetailPage() {
                 </Link>
                 <div className="flex items-center pr-2 sm:pr-4">
                   <button
-                    onClick={() => removeShowFromList(list.id, show.id)}
+                    onClick={() => removeShowFromList(list.id, show.id, show.type || "show")}
                     className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                     title="Remove from list"
                   >

@@ -1,6 +1,7 @@
 -- BookMatch for Kids — Supabase schema
--- Run in Supabase SQL editor. Scope: profiles, children, books, book_entries, reading_lists.
--- Later phases add: sources, groups, group_members, group_lists.
+-- Run in Supabase SQL editor. Scope: profiles, children, books, book_entries,
+-- reading_lists, groups, group_members, group_lists.
+-- Later phases add: sources.
 
 -- =====================================================================
 -- Profiles (extends auth.users)
@@ -184,3 +185,275 @@ create policy "reading_lists: parent all" on public.reading_lists
       where c.id = reading_lists.child_id and c.user_id = auth.uid()
     )
   );
+
+-- =====================================================================
+-- Groups: membership helpers used by RLS policies
+-- =====================================================================
+create or replace function public.is_group_member(g uuid, u uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists(
+    select 1 from public.group_members
+    where group_id = g and user_id = u
+  );
+$$;
+
+create or replace function public.is_group_admin(g uuid, u uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists(
+    select 1 from public.group_members
+    where group_id = g and user_id = u and role = 'admin'
+  );
+$$;
+
+grant execute on function public.is_group_member(uuid, uuid) to authenticated;
+grant execute on function public.is_group_admin(uuid, uuid) to authenticated;
+
+-- =====================================================================
+-- Groups
+-- =====================================================================
+create table if not exists public.groups (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  created_by uuid references public.profiles on delete set null,
+  invite_code text unique default substring(md5(random()::text) from 1 for 8),
+  tier text check (tier in ('starter','plus','pro')) not null,
+  max_families int not null,
+  created_at timestamptz default now(),
+  expires_at timestamptz default (now() + interval '1 year')
+);
+
+create index if not exists groups_invite_code_idx on public.groups(invite_code);
+
+alter table public.groups enable row level security;
+
+-- Members can see their own groups.
+drop policy if exists "groups: member read" on public.groups;
+create policy "groups: member read" on public.groups
+  for select using (public.is_group_member(id, auth.uid()));
+
+-- Users can create groups with themselves as the creator; app code gates by
+-- subscription tier before calling insert.
+drop policy if exists "groups: creator insert" on public.groups;
+create policy "groups: creator insert" on public.groups
+  for insert with check (auth.uid() = created_by);
+
+drop policy if exists "groups: admin update" on public.groups;
+create policy "groups: admin update" on public.groups
+  for update using (public.is_group_admin(id, auth.uid()));
+
+drop policy if exists "groups: admin delete" on public.groups;
+create policy "groups: admin delete" on public.groups
+  for delete using (public.is_group_admin(id, auth.uid()));
+
+-- =====================================================================
+-- Group members
+-- =====================================================================
+create table if not exists public.group_members (
+  id uuid primary key default gen_random_uuid(),
+  group_id uuid references public.groups on delete cascade not null,
+  user_id uuid references public.profiles on delete cascade not null,
+  role text default 'member' check (role in ('admin','member')),
+  share_ratings boolean default false,
+  joined_at timestamptz default now(),
+  unique (group_id, user_id)
+);
+
+create index if not exists group_members_group_idx on public.group_members(group_id);
+create index if not exists group_members_user_idx on public.group_members(user_id);
+
+alter table public.group_members enable row level security;
+
+-- See fellow members of groups you belong to.
+drop policy if exists "group_members: fellow read" on public.group_members;
+create policy "group_members: fellow read" on public.group_members
+  for select using (public.is_group_member(group_id, auth.uid()));
+
+-- A user can insert themselves (join). App code verifies the invite code
+-- and the family cap before inserting.
+drop policy if exists "group_members: self join" on public.group_members;
+create policy "group_members: self join" on public.group_members
+  for insert with check (auth.uid() = user_id);
+
+-- Users can leave their own membership; admins can remove others.
+drop policy if exists "group_members: self or admin delete" on public.group_members;
+create policy "group_members: self or admin delete" on public.group_members
+  for delete using (
+    auth.uid() = user_id or public.is_group_admin(group_id, auth.uid())
+  );
+
+-- Users can update their own row (share_ratings toggle); admins can update
+-- anyone's role.
+drop policy if exists "group_members: self update" on public.group_members;
+create policy "group_members: self update" on public.group_members
+  for update using (
+    auth.uid() = user_id or public.is_group_admin(group_id, auth.uid())
+  ) with check (
+    auth.uid() = user_id or public.is_group_admin(group_id, auth.uid())
+  );
+
+-- Enforce max_families cap per tier at the DB level.
+create or replace function public.enforce_group_cap()
+returns trigger
+language plpgsql
+as $$
+declare
+  cap int;
+  current_count int;
+begin
+  select max_families into cap from public.groups where id = new.group_id;
+  select count(*) into current_count from public.group_members where group_id = new.group_id;
+  if current_count >= cap then
+    raise exception 'Group is full (% of % families).', current_count, cap;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists enforce_group_cap_trg on public.group_members;
+create trigger enforce_group_cap_trg
+  before insert on public.group_members
+  for each row execute function public.enforce_group_cap();
+
+-- =====================================================================
+-- Group lists (curated shared book lists)
+-- =====================================================================
+create table if not exists public.group_lists (
+  id uuid primary key default gen_random_uuid(),
+  group_id uuid references public.groups on delete cascade not null,
+  created_by uuid references public.profiles on delete set null,
+  title text not null,
+  description text,
+  books jsonb default '[]'::jsonb,
+  created_at timestamptz default now()
+);
+
+create index if not exists group_lists_group_idx on public.group_lists(group_id);
+
+alter table public.group_lists enable row level security;
+
+drop policy if exists "group_lists: member read" on public.group_lists;
+create policy "group_lists: member read" on public.group_lists
+  for select using (public.is_group_member(group_id, auth.uid()));
+
+drop policy if exists "group_lists: admin write" on public.group_lists;
+create policy "group_lists: admin write" on public.group_lists
+  for all using (public.is_group_admin(group_id, auth.uid()))
+  with check (public.is_group_admin(group_id, auth.uid()));
+
+-- =====================================================================
+-- RPC: look up a group by invite code (bypasses groups.SELECT RLS so
+-- non-members can discover a group by code before joining).
+-- =====================================================================
+create or replace function public.lookup_group_by_invite(code text)
+returns table (
+  id uuid,
+  name text,
+  tier text,
+  max_families int,
+  member_count int
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select
+    g.id,
+    g.name,
+    g.tier,
+    g.max_families,
+    (select count(*)::int from public.group_members gm where gm.group_id = g.id)
+  from public.groups g
+  where g.invite_code = lower(code);
+$$;
+
+grant execute on function public.lookup_group_by_invite(text) to authenticated;
+
+-- =====================================================================
+-- RPC: list members with their profile names (bypasses profiles.SELECT RLS
+-- which only allows owners to read themselves).
+-- =====================================================================
+create or replace function public.list_group_members(g uuid)
+returns table (
+  user_id uuid,
+  full_name text,
+  role text,
+  share_ratings boolean,
+  joined_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select
+    gm.user_id,
+    p.full_name,
+    gm.role,
+    gm.share_ratings,
+    gm.joined_at
+  from public.group_members gm
+  join public.profiles p on p.id = gm.user_id
+  where gm.group_id = g
+    and public.is_group_member(g, auth.uid())
+  order by gm.joined_at asc;
+$$;
+
+grant execute on function public.list_group_members(uuid) to authenticated;
+
+-- =====================================================================
+-- RPC: aggregated group ratings feed (only counts members who opted in
+-- via share_ratings).
+-- =====================================================================
+create or replace function public.group_ratings_feed(g uuid)
+returns table (
+  book_id uuid,
+  title text,
+  author text,
+  cover_image_url text,
+  loved_count int,
+  liked_count int,
+  disliked_count int,
+  dnf_count int,
+  total_count int
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select
+    b.id,
+    b.title,
+    b.author,
+    b.cover_image_url,
+    count(*) filter (where be.rating = 'loved')::int,
+    count(*) filter (where be.rating = 'liked')::int,
+    count(*) filter (where be.rating = 'disliked')::int,
+    count(*) filter (where be.rating = 'dnf')::int,
+    count(*)::int
+  from public.group_members gm
+  join public.children c on c.user_id = gm.user_id
+  join public.book_entries be on be.child_id = c.id
+  join public.books b on b.id = be.book_id
+  where gm.group_id = g
+    and gm.share_ratings = true
+    and public.is_group_member(g, auth.uid())
+  group by b.id, b.title, b.author, b.cover_image_url
+  order by
+    count(*) filter (where be.rating = 'loved') desc,
+    count(*) desc
+  limit 50;
+$$;
+
+grant execute on function public.group_ratings_feed(uuid) to authenticated;

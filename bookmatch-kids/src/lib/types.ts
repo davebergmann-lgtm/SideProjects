@@ -77,3 +77,72 @@ export type ReadingList = {
   source_preference: 'free_first' | 'any';
   books: RecommendedBook[];
 };
+
+export type Group = {
+  id: string;
+  name: string;
+  created_by: string | null;
+  invite_code: string;
+  tier: 'starter' | 'plus' | 'pro';
+  max_families: number;
+  created_at: string;
+  expires_at: string | null;
+};
+
+export type GroupMember = {
+  id: string;
+  group_id: string;
+  user_id: string;
+  role: 'admin' | 'member';
+  share_ratings: boolean;
+  joined_at: string;
+};
+
+/** Row returned by the list_group_members RPC. */
+export type GroupMemberWithProfile = {
+  user_id: string;
+  full_name: string | null;
+  role: 'admin' | 'member';
+  share_ratings: boolean;
+  joined_at: string;
+};
+
+export type GroupListBook = {
+  title: string;
+  author: string;
+  isbn: string | null;
+  cover_image_url: string | null;
+  google_books_id: string | null;
+};
+
+export type GroupList = {
+  id: string;
+  group_id: string;
+  created_by: string | null;
+  title: string;
+  description: string | null;
+  books: GroupListBook[];
+  created_at: string;
+};
+
+/** Row returned by the group_ratings_feed RPC. */
+export type GroupRatingFeedItem = {
+  book_id: string;
+  title: string;
+  author: string | null;
+  cover_image_url: string | null;
+  loved_count: number;
+  liked_count: number;
+  disliked_count: number;
+  dnf_count: number;
+  total_count: number;
+};
+
+/** Row returned by the lookup_group_by_invite RPC. */
+export type GroupLookupResult = {
+  id: string;
+  name: string;
+  tier: 'starter' | 'plus' | 'pro';
+  max_families: number;
+  member_count: number;
+};

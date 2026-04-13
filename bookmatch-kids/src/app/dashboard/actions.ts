@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { MAX_CHILDREN, type ReadingLevel } from '@/lib/constants';
+import { generateRecommendations } from '@/lib/anthropic';
+import type { Book, BookEntry, Child } from '@/lib/types';
 
 export async function createChild(formData: FormData) {
   const supabase = createClient();
@@ -83,36 +85,50 @@ export async function rateBook(formData: FormData) {
   const isbn = String(formData.get('isbn') ?? '') || null;
   const coverUrl = String(formData.get('cover_image_url') ?? '') || null;
 
-  if (!childId || !rating || !googleBooksId || !title) return;
+  if (!childId || !rating || !title) return;
 
-  // Upsert the book in the master catalog, keyed on google_books_id.
+  // Upsert the book in the master catalog. Prefer matching by google_books_id
+  // (most precise); fall back to ISBN; finally insert a fresh row. This lets
+  // recommendations without a google id — or without any external id — still
+  // be rated in one tap.
   let bookId: string | null = null;
-  {
-    const { data: existing } = await supabase
+
+  if (googleBooksId) {
+    const { data } = await supabase
       .from('books')
       .select('id')
       .eq('google_books_id', googleBooksId)
       .maybeSingle();
+    if (data?.id) bookId = data.id;
+  }
 
-    if (existing?.id) {
-      bookId = existing.id;
-    } else {
-      const { data: inserted, error: bookError } = await supabase
-        .from('books')
-        .insert({
-          title,
-          author,
-          isbn,
-          cover_image_url: coverUrl,
-          google_books_id: googleBooksId,
-        })
-        .select('id')
-        .single();
-      if (bookError) {
-        redirect(`/dashboard/children/${childId}?error=${encodeURIComponent(bookError.message)}`);
-      }
-      bookId = inserted!.id;
+  if (!bookId && isbn) {
+    const { data } = await supabase
+      .from('books')
+      .select('id')
+      .eq('isbn', isbn)
+      .maybeSingle();
+    if (data?.id) bookId = data.id;
+  }
+
+  if (!bookId) {
+    const { data: inserted, error: bookError } = await supabase
+      .from('books')
+      .insert({
+        title,
+        author,
+        isbn,
+        cover_image_url: coverUrl,
+        google_books_id: googleBooksId || null,
+      })
+      .select('id')
+      .single();
+    if (bookError) {
+      redirect(
+        `/dashboard/children/${childId}?error=${encodeURIComponent(bookError.message)}`
+      );
     }
+    bookId = inserted!.id;
   }
 
   // Upsert the rating (unique on child_id+book_id).
@@ -128,6 +144,65 @@ export async function rateBook(formData: FormData) {
 
   if (error) {
     redirect(`/dashboard/children/${childId}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath(`/dashboard/children/${childId}`);
+}
+
+export async function generateReadingList(formData: FormData) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
+
+  const childId = String(formData.get('child_id') ?? '');
+  if (!childId) return;
+
+  // Verify the child belongs to this user (RLS would also enforce this).
+  const { data: child } = await supabase
+    .from('children')
+    .select('*')
+    .eq('id', childId)
+    .eq('user_id', user.id)
+    .maybeSingle<Child>();
+
+  if (!child) {
+    redirect('/dashboard?error=Child+not+found');
+  }
+
+  // Pull everything the kid has rated, separated into signal buckets.
+  const { data: entries } = await supabase
+    .from('book_entries')
+    .select('*, book:books(*)')
+    .eq('child_id', childId);
+
+  const rated = (entries ?? []) as (BookEntry & { book: Book })[];
+  const lovedBooks = rated.filter((e) => e.rating === 'loved' || e.rating === 'liked');
+  const dislikedBooks = rated.filter((e) => e.rating === 'disliked' || e.rating === 'dnf');
+
+  try {
+    const recommendations = await generateRecommendations({
+      child: child!,
+      lovedBooks,
+      dislikedBooks,
+      sourcePreference: 'free_first',
+    });
+
+    const { error } = await supabase.from('reading_lists').insert({
+      child_id: childId,
+      source_preference: 'free_first',
+      books: recommendations,
+    });
+
+    if (error) {
+      redirect(
+        `/dashboard/children/${childId}?error=${encodeURIComponent(error.message)}`
+      );
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Failed to generate recommendations';
+    redirect(`/dashboard/children/${childId}?error=${encodeURIComponent(msg)}`);
   }
 
   revalidatePath(`/dashboard/children/${childId}`);

@@ -1,6 +1,6 @@
 -- BookMatch for Kids — Supabase schema
--- Run in Supabase SQL editor. Phase 1 scope: profiles, children, books, book_entries.
--- Later phases add: reading_lists, sources, groups, group_members, group_lists.
+-- Run in Supabase SQL editor. Scope: profiles, children, books, book_entries, reading_lists.
+-- Later phases add: sources, groups, group_members, group_lists.
 
 -- =====================================================================
 -- Profiles (extends auth.users)
@@ -151,5 +151,36 @@ create policy "book_entries: parent all" on public.book_entries
     exists (
       select 1 from public.children c
       where c.id = book_entries.child_id and c.user_id = auth.uid()
+    )
+  );
+
+-- =====================================================================
+-- Reading lists (AI-generated recommendation sets)
+-- =====================================================================
+create table if not exists public.reading_lists (
+  id uuid primary key default gen_random_uuid(),
+  child_id uuid references public.children on delete cascade not null,
+  generated_at timestamptz default now(),
+  source_preference text default 'free_first' check (source_preference in ('free_first','any')),
+  books jsonb not null
+);
+
+create index if not exists reading_lists_child_idx
+  on public.reading_lists(child_id, generated_at desc);
+
+alter table public.reading_lists enable row level security;
+
+drop policy if exists "reading_lists: parent all" on public.reading_lists;
+create policy "reading_lists: parent all" on public.reading_lists
+  for all using (
+    exists (
+      select 1 from public.children c
+      where c.id = reading_lists.child_id and c.user_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.children c
+      where c.id = reading_lists.child_id and c.user_id = auth.uid()
     )
   );

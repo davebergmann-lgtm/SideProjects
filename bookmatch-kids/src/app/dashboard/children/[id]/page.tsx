@@ -2,9 +2,25 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { BookSearch } from '@/components/BookSearch';
+import { GenerateListButton } from '@/components/GenerateListButton';
+import { RecommendationCard } from '@/components/RecommendationCard';
 import { READING_LEVELS, RATINGS } from '@/lib/constants';
-import { deleteChild, removeBookEntry } from '@/app/dashboard/actions';
-import type { Book, BookEntry, Child } from '@/lib/types';
+import {
+  deleteChild,
+  generateReadingList,
+  removeBookEntry,
+} from '@/app/dashboard/actions';
+import type {
+  Book,
+  BookEntry,
+  Child,
+  ReadingList,
+  RecommendedBook,
+} from '@/lib/types';
+
+// Claude recommendation calls + Google Books enrichment can run long;
+// bump the route timeout so the server action has room.
+export const maxDuration = 60;
 
 export default async function ChildPage({
   params,
@@ -35,6 +51,34 @@ export default async function ChildPage({
     .order('created_at', { ascending: false });
 
   const entries = (entriesRaw ?? []) as (BookEntry & { book: Book })[];
+
+  const { data: latestListRaw } = await supabase
+    .from('reading_lists')
+    .select('*')
+    .eq('child_id', params.id)
+    .order('generated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const latestList = latestListRaw as ReadingList | null;
+
+  // Filter out recs the parent has already rated so the list stays fresh.
+  const ratedKeys = new Set(
+    entries.flatMap((e) => [
+      e.book?.google_books_id ?? null,
+      e.book?.isbn ?? null,
+      normalizeTitleKey(e.book?.title, e.book?.author),
+    ]).filter(Boolean) as string[]
+  );
+
+  const recommendations: RecommendedBook[] = (latestList?.books ?? []).filter((b) => {
+    const keys = [
+      b.google_books_id,
+      b.isbn,
+      normalizeTitleKey(b.title, b.author),
+    ].filter(Boolean) as string[];
+    return !keys.some((k) => ratedKeys.has(k));
+  });
 
   const readingLevelLabel =
     READING_LEVELS.find((r) => r.value === child.reading_level)?.label ?? null;
@@ -74,18 +118,72 @@ export default async function ChildPage({
         </div>
       </section>
 
-      <section className="mt-6">
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
-          Add a book they&apos;ve read
-        </h2>
-        <BookSearch childId={child.id} />
-      </section>
-
       {searchParams.error && (
         <p className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">
           {searchParams.error}
         </p>
       )}
+
+      <section className="mt-6">
+        <div className="mb-2 flex items-baseline justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+            Recommended for {child.name}
+          </h2>
+          {latestList && (
+            <span className="text-[10px] text-slate-400">
+              {new Date(latestList.generated_at).toLocaleDateString()}
+            </span>
+          )}
+        </div>
+
+        {!latestList ? (
+          <div className="card">
+            <p className="text-sm text-slate-600">
+              {entries.length === 0
+                ? `Add a few books ${child.name} has read, then generate their first list.`
+                : `Ready when you are — we\u2019ll match 10 books to ${child.name}\u2019s taste.`}
+            </p>
+            <form action={generateReadingList} className="mt-4">
+              <input type="hidden" name="child_id" value={child.id} />
+              <GenerateListButton label="Get recommendations" />
+            </form>
+          </div>
+        ) : recommendations.length === 0 ? (
+          <div className="card">
+            <p className="text-sm text-slate-600">
+              You&apos;ve rated everything on the last list — nice work. Generate a fresh set
+              whenever you&apos;re ready.
+            </p>
+            <form action={generateReadingList} className="mt-4">
+              <input type="hidden" name="child_id" value={child.id} />
+              <GenerateListButton label="Refresh recommendations" />
+            </form>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-3">
+              {recommendations.map((book, idx) => (
+                <RecommendationCard
+                  key={`${book.google_books_id ?? book.isbn ?? book.title}-${idx}`}
+                  childId={child.id}
+                  book={book}
+                />
+              ))}
+            </div>
+            <form action={generateReadingList} className="mt-4">
+              <input type="hidden" name="child_id" value={child.id} />
+              <GenerateListButton label="Refresh list" variant="secondary" />
+            </form>
+          </>
+        )}
+      </section>
+
+      <section className="mt-8">
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          Add a book they&apos;ve read
+        </h2>
+        <BookSearch childId={child.id} />
+      </section>
 
       <section className="mt-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
@@ -147,4 +245,13 @@ export default async function ChildPage({
       </section>
     </main>
   );
+}
+
+/** Lowercased "title|author" key used as a last-resort match when a
+ *  recommendation lacks a google_books_id or ISBN. */
+function normalizeTitleKey(title?: string | null, author?: string | null): string | null {
+  if (!title) return null;
+  const t = title.trim().toLowerCase();
+  const a = (author ?? '').trim().toLowerCase();
+  return `${t}|${a}`;
 }

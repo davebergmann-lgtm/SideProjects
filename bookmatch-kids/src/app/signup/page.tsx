@@ -67,6 +67,18 @@ export default function SignupPage({
         <button type="submit" className="btn-primary w-full">
           Create account
         </button>
+        <p className="text-center text-xs text-slate-500">
+          By creating an account you agree to our{' '}
+          <Link href="/terms" className="underline hover:text-slate-700">
+            Terms
+          </Link>{' '}
+          and{' '}
+          <Link href="/privacy" className="underline hover:text-slate-700">
+            Privacy Policy
+          </Link>
+          . You confirm you&apos;re 18+ and the parent or guardian of any kid
+          you add.
+        </p>
       </form>
 
       <div className="my-6 flex items-center gap-3 text-xs uppercase text-slate-400">

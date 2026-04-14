@@ -51,6 +51,11 @@ export default function LoginPage({
         <button type="submit" className="btn-primary w-full">
           Sign in
         </button>
+        <p className="text-center text-xs text-slate-500">
+          <Link href="/forgot-password" className="hover:text-slate-700">
+            Forgot your password?
+          </Link>
+        </p>
       </form>
 
       <div className="my-6 flex items-center gap-3 text-xs uppercase text-slate-400">

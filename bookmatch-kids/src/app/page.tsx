@@ -161,7 +161,15 @@ export default async function HomePage() {
       </section>
 
       <footer className="mt-10 border-t border-slate-100 pt-6 text-center text-xs text-slate-400">
-        <p>© BookMatch for Kids</p>
+        <div className="flex items-center justify-center gap-4">
+          <Link href="/privacy" className="hover:text-slate-600">
+            Privacy
+          </Link>
+          <Link href="/terms" className="hover:text-slate-600">
+            Terms
+          </Link>
+        </div>
+        <p className="mt-2">© BookMatch for Kids</p>
       </footer>
     </main>
   );

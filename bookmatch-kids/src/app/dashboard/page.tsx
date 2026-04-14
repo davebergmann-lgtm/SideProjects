@@ -88,7 +88,7 @@ export default async function DashboardPage({
         )}
       </section>
 
-      <section className="mt-8">
+      <section className="mt-8 space-y-3">
         <Link
           href="/dashboard/groups"
           className="card flex items-center gap-4 hover:border-brand-200"
@@ -100,6 +100,21 @@ export default async function DashboardPage({
             <p className="font-semibold text-slate-900">Groups</p>
             <p className="text-xs text-slate-500">
               Share lists with your co-op or friends
+            </p>
+          </div>
+          <span className="text-slate-400">›</span>
+        </Link>
+        <Link
+          href="/dashboard/billing"
+          className="card flex items-center gap-4 hover:border-brand-200"
+        >
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-100 text-xl">
+            💳
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-slate-900">Billing</p>
+            <p className="text-xs text-slate-500">
+              Manage your subscription and plan
             </p>
           </div>
           <span className="text-slate-400">›</span>

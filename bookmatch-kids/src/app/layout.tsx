@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { SentryInit } from '@/components/SentryInit';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -17,6 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="min-h-screen">
+        <SentryInit />
         <div className="mx-auto w-full max-w-screen-sm px-4 pb-24">
           {children}
         </div>

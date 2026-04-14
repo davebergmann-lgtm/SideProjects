@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createChild } from '@/app/dashboard/actions';
 import { createClient } from '@/lib/supabase/server';
-import { MAX_CHILDREN, READING_LEVELS } from '@/lib/constants';
+import { MAX_CHILDREN, maxChildrenForTier, READING_LEVELS } from '@/lib/constants';
 import { InterestsPicker } from '@/components/InterestsPicker';
 
 export default async function NewChildPage({
@@ -16,13 +16,24 @@ export default async function NewChildPage({
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('subscription_tier')
+    .eq('id', user.id)
+    .maybeSingle();
+  const tierCap = maxChildrenForTier(profile?.subscription_tier);
+
   const { count } = await supabase
     .from('children')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', user.id);
 
-  if ((count ?? 0) >= MAX_CHILDREN) {
-    redirect('/dashboard?error=You+can+add+up+to+3+kids.');
+  if ((count ?? 0) >= tierCap) {
+    const msg =
+      tierCap < MAX_CHILDREN
+        ? 'Free plan is limited to 1 kid. Upgrade to add more.'
+        : `You can add up to ${MAX_CHILDREN} kids.`;
+    redirect(`/dashboard?error=${encodeURIComponent(msg)}`);
   }
 
   return (

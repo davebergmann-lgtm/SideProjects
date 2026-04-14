@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { MAX_CHILDREN, READING_LEVELS } from '@/lib/constants';
+import { MAX_CHILDREN, maxChildrenForTier, READING_LEVELS } from '@/lib/constants';
 import type { Child } from '@/lib/types';
 
 export default async function DashboardPage({
@@ -17,7 +17,7 @@ export default async function DashboardPage({
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, email')
+    .select('full_name, email, subscription_tier')
     .eq('id', user.id)
     .maybeSingle();
 
@@ -28,7 +28,9 @@ export default async function DashboardPage({
     .order('created_at', { ascending: true });
 
   const kids = (children ?? []) as Child[];
-  const canAddMore = kids.length < MAX_CHILDREN;
+  const tierCap = maxChildrenForTier(profile?.subscription_tier);
+  const canAddMore = kids.length < tierCap;
+  const blockedByFreeTier = !canAddMore && tierCap < MAX_CHILDREN;
   const firstName =
     profile?.full_name?.split(' ')[0] ?? user.email?.split('@')[0] ?? 'there';
 
@@ -80,6 +82,13 @@ export default async function DashboardPage({
           >
             <span className="text-xl leading-none">+</span>
             Add {kids.length === 0 ? 'a kid' : 'another kid'}
+          </Link>
+        ) : blockedByFreeTier ? (
+          <Link
+            href="/dashboard/billing"
+            className="card flex items-center justify-center gap-2 border-dashed border-brand-300 bg-brand-50 text-brand-800"
+          >
+            <span>Upgrade to add up to {MAX_CHILDREN} kids →</span>
           </Link>
         ) : (
           <p className="text-center text-xs text-slate-500">

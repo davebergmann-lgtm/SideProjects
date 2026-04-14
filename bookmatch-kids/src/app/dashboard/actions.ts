@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { MAX_CHILDREN, type ReadingLevel } from '@/lib/constants';
+import { MAX_CHILDREN, maxChildrenForTier, type ReadingLevel } from '@/lib/constants';
 import { generateRecommendations } from '@/lib/anthropic';
 import { FREE_MONTHLY_RECS, getRecQuota } from '@/lib/rateLimit';
 import type { Book, BookEntry, Child } from '@/lib/types';
@@ -28,13 +28,26 @@ export async function createChild(formData: FormData) {
   const age = ageRaw ? Number.parseInt(ageRaw, 10) : null;
 
   // Pre-check the cap so we can show a friendly message instead of a DB error.
+  // Free tier is capped at 1; paid tiers at MAX_CHILDREN (3). The DB trigger
+  // still enforces the hard max of 3 as a belt-and-suspenders safeguard.
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('subscription_tier')
+    .eq('id', user.id)
+    .maybeSingle();
+  const tierCap = maxChildrenForTier(profile?.subscription_tier);
+
   const { count } = await supabase
     .from('children')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', user.id);
 
-  if ((count ?? 0) >= MAX_CHILDREN) {
-    redirect('/dashboard?error=You+can+add+up+to+3+kids.');
+  if ((count ?? 0) >= tierCap) {
+    const msg =
+      tierCap < MAX_CHILDREN
+        ? 'Free plan is limited to 1 kid. Upgrade to add more.'
+        : `You can add up to ${MAX_CHILDREN} kids.`;
+    redirect(`/dashboard?error=${encodeURIComponent(msg)}`);
   }
 
   const { data, error } = await supabase

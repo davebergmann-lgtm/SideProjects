@@ -45,3 +45,9 @@ export const RATINGS = [
 export type Rating = (typeof RATINGS)[number]['value'];
 
 export const MAX_CHILDREN = 3;
+export const FREE_MAX_CHILDREN = 1;
+
+/** Per-tier cap on child profiles. Paid tiers get the full MAX_CHILDREN. */
+export function maxChildrenForTier(subscriptionTier: string | null | undefined): number {
+  return subscriptionTier && subscriptionTier !== 'free' ? MAX_CHILDREN : FREE_MAX_CHILDREN;
+}

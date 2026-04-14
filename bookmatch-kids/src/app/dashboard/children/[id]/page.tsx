@@ -5,6 +5,7 @@ import { BookSearch } from '@/components/BookSearch';
 import { GenerateListButton } from '@/components/GenerateListButton';
 import { RecommendationCard } from '@/components/RecommendationCard';
 import { READING_LEVELS, RATINGS } from '@/lib/constants';
+import { getRecQuota } from '@/lib/rateLimit';
 import {
   deleteChild,
   generateReadingList,
@@ -61,6 +62,18 @@ export default async function ChildPage({
     .maybeSingle();
 
   const latestList = latestListRaw as ReadingList | null;
+
+  // Free-tier rec quota (paid users see no counter, no cap).
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('subscription_tier')
+    .eq('id', user.id)
+    .maybeSingle();
+  const quota = await getRecQuota(
+    supabase,
+    user.id,
+    profile?.subscription_tier ?? 'free'
+  );
 
   // Filter out recs the parent has already rated so the list stays fresh.
   const ratedKeys = new Set(
@@ -136,7 +149,9 @@ export default async function ChildPage({
           )}
         </div>
 
-        {!latestList ? (
+        {quota.blocked ? (
+          <PaywallCard />
+        ) : !latestList ? (
           <div className="card">
             <p className="text-sm text-slate-600">
               {entries.length === 0
@@ -147,6 +162,7 @@ export default async function ChildPage({
               <input type="hidden" name="child_id" value={child.id} />
               <GenerateListButton label="Get recommendations" />
             </form>
+            {!quota.isPaid && <FreeQuotaNote remaining={quota.remaining ?? 0} limit={quota.limit ?? 0} />}
           </div>
         ) : recommendations.length === 0 ? (
           <div className="card">
@@ -158,6 +174,7 @@ export default async function ChildPage({
               <input type="hidden" name="child_id" value={child.id} />
               <GenerateListButton label="Refresh recommendations" />
             </form>
+            {!quota.isPaid && <FreeQuotaNote remaining={quota.remaining ?? 0} limit={quota.limit ?? 0} />}
           </div>
         ) : (
           <>
@@ -174,6 +191,7 @@ export default async function ChildPage({
               <input type="hidden" name="child_id" value={child.id} />
               <GenerateListButton label="Refresh list" variant="secondary" />
             </form>
+            {!quota.isPaid && <FreeQuotaNote remaining={quota.remaining ?? 0} limit={quota.limit ?? 0} />}
           </>
         )}
       </section>
@@ -254,4 +272,31 @@ function normalizeTitleKey(title?: string | null, author?: string | null): strin
   const t = title.trim().toLowerCase();
   const a = (author ?? '').trim().toLowerCase();
   return `${t}|${a}`;
+}
+
+function FreeQuotaNote({ remaining, limit }: { remaining: number; limit: number }) {
+  return (
+    <p className="mt-3 text-center text-xs text-slate-500">
+      Free plan · {remaining} of {limit} recommendations left this month ·{' '}
+      <Link href="/dashboard/billing" className="text-brand-700 hover:underline">
+        Upgrade
+      </Link>
+    </p>
+  );
+}
+
+function PaywallCard() {
+  return (
+    <div className="card border-brand-200 bg-brand-50">
+      <p className="text-sm font-semibold text-brand-800">
+        You&apos;ve used your 5 free recommendations this month
+      </p>
+      <p className="mt-1 text-sm text-brand-800/80">
+        Upgrade to Family for unlimited AI reading lists for every kid in your house.
+      </p>
+      <Link href="/dashboard/billing" className="btn-primary mt-4 w-full">
+        See plans
+      </Link>
+    </div>
+  );
 }

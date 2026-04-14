@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { MAX_CHILDREN, type ReadingLevel } from '@/lib/constants';
 import { generateRecommendations } from '@/lib/anthropic';
+import { FREE_MONTHLY_RECS, getRecQuota } from '@/lib/rateLimit';
 import type { Book, BookEntry, Child } from '@/lib/types';
 
 export async function createChild(formData: FormData) {
@@ -169,6 +170,28 @@ export async function generateReadingList(formData: FormData) {
 
   if (!child) {
     redirect('/dashboard?error=Child+not+found');
+  }
+
+  // Free-tier rate limit: 5 generations / calendar month. Paid tiers
+  // are unlimited. Gate the AI call so we don't burn tokens past the cap.
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('subscription_tier')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  const quota = await getRecQuota(
+    supabase,
+    user.id,
+    profile?.subscription_tier ?? 'free'
+  );
+
+  if (quota.blocked) {
+    redirect(
+      `/dashboard/children/${childId}?error=${encodeURIComponent(
+        `Free plan limit reached (${FREE_MONTHLY_RECS}/month). Upgrade for unlimited recommendations.`
+      )}`
+    );
   }
 
   // Pull everything the kid has rated, separated into signal buckets.

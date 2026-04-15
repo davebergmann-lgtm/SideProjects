@@ -128,6 +128,21 @@ export default async function DashboardPage({
           </div>
           <span className="text-slate-400">›</span>
         </Link>
+        <Link
+          href="/dashboard/settings"
+          className="card flex items-center gap-4 hover:border-brand-200"
+        >
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-100 text-xl">
+            ⚙️
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-slate-900">Settings</p>
+            <p className="text-xs text-slate-500">
+              Account, sign out, delete account
+            </p>
+          </div>
+          <span className="text-slate-400">›</span>
+        </Link>
       </section>
     </main>
   );

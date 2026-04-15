@@ -3,7 +3,11 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { PRICING } from '@/lib/pricing';
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: { deleted?: string };
+}) {
   const supabase = createClient();
   const {
     data: { user },
@@ -16,6 +20,12 @@ export default async function HomePage() {
 
   return (
     <main className="pt-8">
+      {searchParams.deleted === '1' && (
+        <div className="mb-6 rounded-xl bg-green-50 p-3 text-center text-sm text-green-800">
+          Your account and all its data have been deleted.
+        </div>
+      )}
+
       {/* Hero */}
       <section className="text-center">
         <div className="mx-auto mb-5 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-500 text-3xl">

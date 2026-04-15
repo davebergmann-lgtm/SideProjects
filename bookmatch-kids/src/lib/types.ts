@@ -138,6 +138,16 @@ export type GroupRatingFeedItem = {
   total_count: number;
 };
 
+/** Row returned by the popular_books RPC. A globally-trending shortlist
+ *  passed to Claude as a cold-start signal, not a hard constraint. */
+export type PopularBook = {
+  id: string;
+  title: string;
+  author: string | null;
+  community_score: number;
+  total_ratings: number;
+};
+
 /** Row returned by the lookup_group_by_invite RPC. */
 export type GroupLookupResult = {
   id: string;

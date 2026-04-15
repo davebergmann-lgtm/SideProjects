@@ -5,6 +5,7 @@ import type {
   Book,
   BookEntry,
   Child,
+  PopularBook,
   RawRecommendation,
   RecommendedBook,
 } from './types';
@@ -30,6 +31,7 @@ Guidelines:
 - Recommendations must match the child's reading level — not too easy, not too hard.
 - Use the loved books as signal for taste; avoid patterns present in the disliked / DNF books.
 - If preferred sources are set to free/library-first, prioritize widely-available titles (popular series, award winners, well-stocked library titles).
+- The user may include a PROVEN HITS list — books other kids on the site have rated well. Treat it as a shortlist of strong candidates, not a mandate: include any that genuinely fit this child's taste and level, skip any that clearly don't. Still recommend books outside the list when they're a better fit.
 - Do not recommend books the child already rated.
 - Prefer book 1 of a series when the child enjoys series.
 
@@ -48,6 +50,7 @@ type GenerateArgs = {
   child: Child;
   lovedBooks: (BookEntry & { book: Book })[];
   dislikedBooks: (BookEntry & { book: Book })[];
+  popularBooks: PopularBook[];
   sourcePreference: 'free_first' | 'any';
 };
 
@@ -55,9 +58,16 @@ export async function generateRecommendations({
   child,
   lovedBooks,
   dislikedBooks,
+  popularBooks,
   sourcePreference,
 }: GenerateArgs): Promise<RecommendedBook[]> {
-  const userPrompt = buildUserPrompt({ child, lovedBooks, dislikedBooks, sourcePreference });
+  const userPrompt = buildUserPrompt({
+    child,
+    lovedBooks,
+    dislikedBooks,
+    popularBooks,
+    sourcePreference,
+  });
 
   const response = await client().messages.create({
     model: MODEL,
@@ -85,6 +95,7 @@ function buildUserPrompt({
   child,
   lovedBooks,
   dislikedBooks,
+  popularBooks,
   sourcePreference,
 }: GenerateArgs): string {
   const readingLevelLabel =
@@ -104,6 +115,18 @@ function buildUserPrompt({
           .join('\n')
       : '- (none)';
 
+  const proven =
+    popularBooks.length > 0
+      ? popularBooks
+          .map(
+            (b) =>
+              `- ${b.title}${b.author ? ` by ${b.author}` : ''} (${Math.round(
+                b.community_score * 100
+              )}% positive across ${b.total_ratings} ratings)`
+          )
+          .join('\n')
+      : '- (none yet — use your best judgment)';
+
   const sourceLine =
     sourcePreference === 'free_first'
       ? 'Prioritize free/library options.'
@@ -121,6 +144,9 @@ ${loved}
 
 BOOKS THEY DISLIKED OR DID NOT FINISH:
 ${disliked}
+
+PROVEN HITS (community favorites — use as a shortlist, not a mandate):
+${proven}
 
 PREFERRED SOURCES: ${sourceLine}
 

@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 import { MAX_CHILDREN, maxChildrenForTier, type ReadingLevel } from '@/lib/constants';
 import { generateRecommendations } from '@/lib/anthropic';
 import { FREE_MONTHLY_RECS, getRecQuota } from '@/lib/rateLimit';
-import type { Book, BookEntry, Child } from '@/lib/types';
+import type { Book, BookEntry, Child, PopularBook } from '@/lib/types';
 
 export async function createChild(formData: FormData) {
   const supabase = createClient();
@@ -217,11 +217,25 @@ export async function generateReadingList(formData: FormData) {
   const lovedBooks = rated.filter((e) => e.rating === 'loved' || e.rating === 'liked');
   const dislikedBooks = rated.filter((e) => e.rating === 'disliked' || e.rating === 'dnf');
 
+  // Pull the globally-popular shortlist as a cold-start signal for Claude.
+  // Filter out anything this child has already rated so we don't prompt with
+  // stale suggestions. Missing RPC (e.g. migration not yet applied) is
+  // non-fatal — fall back to an empty list and let Claude recommend solo.
+  const ratedBookIds = new Set(rated.map((e) => e.book_id));
+  const { data: popularRaw } = await supabase.rpc('popular_books', {
+    min_ratings: 3,
+    max_count: 20,
+  });
+  const popularBooks = ((popularRaw as PopularBook[] | null) ?? []).filter(
+    (b) => !ratedBookIds.has(b.id)
+  );
+
   try {
     const recommendations = await generateRecommendations({
       child: child!,
       lovedBooks,
       dislikedBooks,
+      popularBooks,
       sourcePreference: 'free_first',
     });
 

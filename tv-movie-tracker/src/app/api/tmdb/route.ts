@@ -42,5 +42,18 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(data);
   }
 
+  if (action === "movie_recommendations") {
+    const id = req.nextUrl.searchParams.get("id");
+    if (!id) {
+      return NextResponse.json({ error: "Missing movie ID" }, { status: 400 });
+    }
+    const res = await fetch(`${TMDB_BASE}/movie/${id}/recommendations?api_key=${apiKey}&language=en-US&page=1`);
+    if (!res.ok) {
+      return NextResponse.json({ results: [] });
+    }
+    const data = await res.json();
+    return NextResponse.json(data);
+  }
+
   return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 }

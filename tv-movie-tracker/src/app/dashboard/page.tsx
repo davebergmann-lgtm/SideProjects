@@ -42,6 +42,21 @@ function formatTime12h(time24: string): string {
   return `${h}:${mStr} ${ampm}`;
 }
 
+function formatBrowseDate(offset: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return d.toISOString().split("T")[0];
+}
+
+function formatDisplayDate(dateStr: string): string {
+  return new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 export default function DashboardPage() {
   const { lists } = useLists();
   const [tonightShows, setTonightShows] = useState<TonightShow[]>([]);
@@ -50,11 +65,21 @@ export default function DashboardPage() {
   const [loadingTonight, setLoadingTonight] = useState(true);
   const [loadingStatus, setLoadingStatus] = useState(true);
 
+  // Browse All state
+  const [dateOffset, setDateOffset] = useState(0);
+  const [browseSchedule, setBrowseSchedule] = useState<ScheduleEntry[]>([]);
+  const [browseLoading, setBrowseLoading] = useState(true);
+  const [browseSource, setBrowseSource] = useState<"tv" | "streaming">("tv");
+
+  const browseDate = formatBrowseDate(dateOffset);
+
   // Only include TV shows (not movies) for TVMaze-based dashboard features
   const allShowIds = new Set<number>();
   lists.forEach((list) => list.shows.forEach((s) => {
     if (!s.type || s.type === "show") allShowIds.add(s.id);
   }));
+
+  const hasSavedShows = allShowIds.size > 0;
 
   // Fetch "what's on tonight/tomorrow" by checking the TVMaze schedule
   useEffect(() => {
@@ -98,7 +123,6 @@ export default function DashboardPage() {
             }));
         };
 
-        // Dedupe by showId+season+episode
         const dedupe = (shows: TonightShow[]): TonightShow[] => {
           const seen = new Set<string>();
           return shows.filter((s) => {
@@ -170,6 +194,19 @@ export default function DashboardPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lists]);
 
+  // Fetch Browse All schedule
+  useEffect(() => {
+    setBrowseLoading(true);
+    const fetcher = browseSource === "tv" ? getSchedule : getStreamingSchedule;
+    fetcher(browseDate, "US")
+      .then((data) => {
+        data.sort((a, b) => (a.airtime || "").localeCompare(b.airtime || ""));
+        setBrowseSchedule(data);
+      })
+      .catch(() => setBrowseSchedule([]))
+      .finally(() => setBrowseLoading(false));
+  }, [browseDate, browseSource]);
+
   const statusGroups = {
     Running: showDetails.filter((s) => s.status === "Running"),
     "In Development": showDetails.filter((s) => s.status === "In Development"),
@@ -191,167 +228,278 @@ export default function DashboardPage() {
     Ended: "bg-red-500/10 border-red-500/20",
   };
 
-  if (allShowIds.size === 0) {
-    return (
-      <div className="text-center py-20 text-slate-400">
-        <p className="text-lg">No saved shows yet</p>
-        <p className="text-sm mt-1">Save some shows to your lists to see your dashboard</p>
-        <Link href="/" className="text-blue-400 hover:text-blue-300 mt-3 inline-block">
-          Search for shows
-        </Link>
-      </div>
-    );
-  }
+  const dayLabel =
+    dateOffset === 0 ? "Today" : dateOffset === 1 ? "Tomorrow" : dateOffset === -1 ? "Yesterday" : "";
 
   return (
     <div className="space-y-8">
       <h1 className="text-xl sm:text-2xl font-bold">Dashboard</h1>
 
-      {/* What's On Tonight / Tomorrow */}
-      <section>
-        <h2 className="text-xl font-semibold mb-4">
-          What&apos;s On Tonight
-        </h2>
-        {loadingTonight ? (
-          <div className="flex items-center gap-2 text-slate-400 py-4">
-            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-            Checking schedules...
-          </div>
-        ) : tonightShows.length === 0 && tomorrowShows.length === 0 ? (
-          <p className="text-slate-500 py-4">None of your saved shows air today or tomorrow.</p>
-        ) : (
-          <div className="space-y-4">
-            {tonightShows.length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium text-slate-400 mb-2 uppercase tracking-wide">Today</h3>
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {tonightShows.map((show, i) => (
-                    <Link
-                      key={`${show.showId}-${i}`}
-                      href={`/show/${show.showId}`}
-                      className="flex gap-3 bg-[#1e293b] rounded-lg border border-[#334155] p-3 hover:border-blue-500/30 transition-colors"
-                    >
-                      <div className="relative w-12 h-16 flex-shrink-0 rounded overflow-hidden bg-[#0f172a]">
-                        {show.image ? (
-                          <Image src={show.image} alt={show.showName} fill className="object-cover" sizes="48px" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-slate-600 text-xs">TV</div>
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium text-sm truncate">{show.showName}</p>
-                        <p className="text-xs text-blue-400">{show.network}</p>
-                        <p className="text-xs text-slate-400 mt-1">
-                          S{show.season}E{show.episodeNumber}: {show.episodeName}
-                        </p>
-                        <p className="text-xs text-slate-500">{formatTime12h(show.airtime)}</p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-            {tomorrowShows.length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium text-slate-400 mb-2 uppercase tracking-wide">Tomorrow</h3>
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {tomorrowShows.map((show, i) => (
-                    <Link
-                      key={`${show.showId}-${i}`}
-                      href={`/show/${show.showId}`}
-                      className="flex gap-3 bg-[#1e293b] rounded-lg border border-[#334155] p-3 hover:border-blue-500/30 transition-colors"
-                    >
-                      <div className="relative w-12 h-16 flex-shrink-0 rounded overflow-hidden bg-[#0f172a]">
-                        {show.image ? (
-                          <Image src={show.image} alt={show.showName} fill className="object-cover" sizes="48px" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-slate-600 text-xs">TV</div>
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium text-sm truncate">{show.showName}</p>
-                        <p className="text-xs text-blue-400">{show.network}</p>
-                        <p className="text-xs text-slate-400 mt-1">
-                          S{show.season}E{show.episodeNumber}: {show.episodeName}
-                        </p>
-                        <p className="text-xs text-slate-500">{formatTime12h(show.airtime)}</p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </section>
+      {!hasSavedShows && (
+        <div className="text-center py-8 text-slate-400 bg-[#1e293b] rounded-lg border border-[#334155]">
+          <p className="text-lg">No saved shows yet</p>
+          <p className="text-sm mt-1">Save some shows to your lists to see tonight&apos;s schedule and status overview</p>
+          <Link href="/" className="text-blue-400 hover:text-blue-300 mt-3 inline-block">
+            Search for shows
+          </Link>
+        </div>
+      )}
 
-      {/* Show Status Dashboard */}
-      <section>
-        <h2 className="text-xl font-semibold mb-4">Show Status Overview</h2>
-        {loadingStatus ? (
-          <div className="flex items-center gap-2 text-slate-400 py-4">
-            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-            Loading show statuses...
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Summary counts */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {(Object.entries(statusGroups) as [string, ShowWithDetails[]][]).map(([status, shows]) => (
-                <div
-                  key={status}
-                  className={`rounded-lg border p-4 text-center ${statusBgColors[status] || "bg-[#1e293b] border-[#334155]"}`}
-                >
-                  <p className={`text-2xl font-bold ${statusColors[status] || "text-white"}`}>{shows.length}</p>
-                  <p className="text-xs text-slate-400 mt-1">{status}</p>
-                </div>
-              ))}
+      {/* What's On Tonight / Tomorrow - only shown when user has saved shows */}
+      {hasSavedShows && (
+        <section>
+          <h2 className="text-xl font-semibold mb-4">
+            What&apos;s On Tonight
+          </h2>
+          {loadingTonight ? (
+            <div className="flex items-center gap-2 text-slate-400 py-4">
+              <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              Checking schedules...
             </div>
-
-            {/* Show lists by status */}
-            {(Object.entries(statusGroups) as [string, ShowWithDetails[]][]).map(([status, shows]) => {
-              if (shows.length === 0) return null;
-              return (
-                <div key={status}>
-                  <h3 className={`text-sm font-medium mb-2 uppercase tracking-wide ${statusColors[status]}`}>
-                    {status} ({shows.length})
-                  </h3>
+          ) : tonightShows.length === 0 && tomorrowShows.length === 0 ? (
+            <p className="text-slate-500 py-4">None of your saved shows air today or tomorrow.</p>
+          ) : (
+            <div className="space-y-4">
+              {tonightShows.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium text-slate-400 mb-2 uppercase tracking-wide">Today</h3>
                   <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {shows
-                      .sort((a, b) => a.name.localeCompare(b.name))
-                      .map((show) => (
-                        <Link
-                          key={show.id}
-                          href={`/show/${show.id}`}
-                          className="flex gap-3 bg-[#1e293b] rounded-lg border border-[#334155] p-3 hover:border-blue-500/30 transition-colors"
-                        >
-                          <div className="relative w-10 h-14 flex-shrink-0 rounded overflow-hidden bg-[#0f172a]">
-                            {show.image ? (
-                              <Image src={show.image} alt={show.name} fill className="object-cover" sizes="40px" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-slate-600 text-xs">TV</div>
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-medium text-sm truncate">{show.name}</p>
-                            <p className="text-xs text-blue-400">{show.network}</p>
-                            {show.nextEpisode ? (
-                              <p className="text-xs text-slate-400 mt-1">
-                                Next: {show.nextEpisode}
-                                {show.nextEpisodeDate && (
-                                  <span className="text-slate-500"> ({formatDate(show.nextEpisodeDate)})</span>
-                                )}
-                              </p>
-                            ) : status === "Running" ? (
-                              <p className="text-xs text-slate-500 mt-1">No upcoming episode scheduled</p>
-                            ) : null}
-                          </div>
-                        </Link>
-                      ))}
+                    {tonightShows.map((show, i) => (
+                      <Link
+                        key={`${show.showId}-${i}`}
+                        href={`/show/${show.showId}`}
+                        className="flex gap-3 bg-[#1e293b] rounded-lg border border-[#334155] p-3 hover:border-blue-500/30 transition-colors"
+                      >
+                        <div className="relative w-12 h-16 flex-shrink-0 rounded overflow-hidden bg-[#0f172a]">
+                          {show.image ? (
+                            <Image src={show.image} alt={show.showName} fill className="object-cover" sizes="48px" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-slate-600 text-xs">TV</div>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm truncate">{show.showName}</p>
+                          <p className="text-xs text-blue-400">{show.network}</p>
+                          <p className="text-xs text-slate-400 mt-1">
+                            S{show.season}E{show.episodeNumber}: {show.episodeName}
+                          </p>
+                          <p className="text-xs text-slate-500">{formatTime12h(show.airtime)}</p>
+                        </div>
+                      </Link>
+                    ))}
                   </div>
                 </div>
-              );
-            })}
+              )}
+              {tomorrowShows.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium text-slate-400 mb-2 uppercase tracking-wide">Tomorrow</h3>
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {tomorrowShows.map((show, i) => (
+                      <Link
+                        key={`${show.showId}-${i}`}
+                        href={`/show/${show.showId}`}
+                        className="flex gap-3 bg-[#1e293b] rounded-lg border border-[#334155] p-3 hover:border-blue-500/30 transition-colors"
+                      >
+                        <div className="relative w-12 h-16 flex-shrink-0 rounded overflow-hidden bg-[#0f172a]">
+                          {show.image ? (
+                            <Image src={show.image} alt={show.showName} fill className="object-cover" sizes="48px" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-slate-600 text-xs">TV</div>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm truncate">{show.showName}</p>
+                          <p className="text-xs text-blue-400">{show.network}</p>
+                          <p className="text-xs text-slate-400 mt-1">
+                            S{show.season}E{show.episodeNumber}: {show.episodeName}
+                          </p>
+                          <p className="text-xs text-slate-500">{formatTime12h(show.airtime)}</p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Show Status Dashboard - only shown when user has saved shows */}
+      {hasSavedShows && (
+        <section>
+          <h2 className="text-xl font-semibold mb-4">Show Status Overview</h2>
+          {loadingStatus ? (
+            <div className="flex items-center gap-2 text-slate-400 py-4">
+              <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              Loading show statuses...
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {(Object.entries(statusGroups) as [string, ShowWithDetails[]][]).map(([status, shows]) => (
+                  <div
+                    key={status}
+                    className={`rounded-lg border p-4 text-center ${statusBgColors[status] || "bg-[#1e293b] border-[#334155]"}`}
+                  >
+                    <p className={`text-2xl font-bold ${statusColors[status] || "text-white"}`}>{shows.length}</p>
+                    <p className="text-xs text-slate-400 mt-1">{status}</p>
+                  </div>
+                ))}
+              </div>
+
+              {(Object.entries(statusGroups) as [string, ShowWithDetails[]][]).map(([status, shows]) => {
+                if (shows.length === 0) return null;
+                return (
+                  <div key={status}>
+                    <h3 className={`text-sm font-medium mb-2 uppercase tracking-wide ${statusColors[status]}`}>
+                      {status} ({shows.length})
+                    </h3>
+                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                      {shows
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((show) => (
+                          <Link
+                            key={show.id}
+                            href={`/show/${show.id}`}
+                            className="flex gap-3 bg-[#1e293b] rounded-lg border border-[#334155] p-3 hover:border-blue-500/30 transition-colors"
+                          >
+                            <div className="relative w-10 h-14 flex-shrink-0 rounded overflow-hidden bg-[#0f172a]">
+                              {show.image ? (
+                                <Image src={show.image} alt={show.name} fill className="object-cover" sizes="40px" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-slate-600 text-xs">TV</div>
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm truncate">{show.name}</p>
+                              <p className="text-xs text-blue-400">{show.network}</p>
+                              {show.nextEpisode ? (
+                                <p className="text-xs text-slate-400 mt-1">
+                                  Next: {show.nextEpisode}
+                                  {show.nextEpisodeDate && (
+                                    <span className="text-slate-500"> ({formatDate(show.nextEpisodeDate)})</span>
+                                  )}
+                                </p>
+                              ) : status === "Running" ? (
+                                <p className="text-xs text-slate-500 mt-1">No upcoming episode scheduled</p>
+                              ) : null}
+                            </div>
+                          </Link>
+                        ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Browse All TV Schedule */}
+      <section>
+        <h2 className="text-xl font-semibold mb-4">Browse All TV</h2>
+
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setDateOffset((d) => d - 1)}
+              className="px-3 py-2 bg-[#1e293b] border border-[#334155] rounded-lg hover:bg-[#334155] transition-colors"
+            >
+              &larr;
+            </button>
+            <div className="text-center min-w-[160px] sm:min-w-[200px]">
+              <div className="font-semibold text-sm sm:text-base">{formatDisplayDate(browseDate)}</div>
+              {dayLabel && <div className="text-sm text-blue-400">{dayLabel}</div>}
+            </div>
+            <button
+              onClick={() => setDateOffset((d) => d + 1)}
+              className="px-3 py-2 bg-[#1e293b] border border-[#334155] rounded-lg hover:bg-[#334155] transition-colors"
+            >
+              &rarr;
+            </button>
+            {dateOffset !== 0 && (
+              <button
+                onClick={() => setDateOffset(0)}
+                className="px-3 py-2 text-sm text-blue-400 hover:text-blue-300"
+              >
+                Today
+              </button>
+            )}
+          </div>
+
+          <div className="flex bg-[#1e293b] rounded-lg border border-[#334155] p-0.5">
+            <button
+              onClick={() => setBrowseSource("tv")}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                browseSource === "tv" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              TV Networks
+            </button>
+            <button
+              onClick={() => setBrowseSource("streaming")}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                browseSource === "streaming" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              Streaming
+            </button>
+          </div>
+        </div>
+
+        {browseLoading ? (
+          <div className="flex justify-center py-12">
+            <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : browseSchedule.length === 0 ? (
+          <div className="text-center py-12 text-slate-400">No shows scheduled for this date</div>
+        ) : (
+          <div className="space-y-2">
+            {browseSchedule.map((entry) => (
+              <Link
+                key={entry.id}
+                href={`/show/${entry.show.id}`}
+                className="flex gap-3 bg-[#1e293b] rounded-lg border border-[#334155] hover:border-blue-500/50 transition-all overflow-hidden group"
+              >
+                <div className="relative w-[50px] sm:w-[60px] min-h-[70px] sm:min-h-[80px] flex-shrink-0 bg-[#0f172a]">
+                  {entry.show.image?.medium ? (
+                    <Image
+                      src={entry.show.image.medium}
+                      alt={entry.show.name}
+                      fill
+                      className="object-cover"
+                      sizes="60px"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-[#334155]" />
+                  )}
+                </div>
+                <div className="py-2 pr-3 flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h3 className="font-semibold group-hover:text-blue-400 transition-colors truncate">
+                        {entry.show.name}
+                      </h3>
+                      <p className="text-sm text-slate-400 truncate">
+                        S{entry.season}E{entry.number || "?"}: {entry.name}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-sm text-blue-400 font-medium">
+                        {entry.airtime || "TBA"}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {entry.show.network?.name || entry.show.webChannel?.name || ""}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+            <p className="text-center text-sm text-slate-500 pt-2">
+              {browseSchedule.length} shows scheduled
+            </p>
           </div>
         )}
       </section>

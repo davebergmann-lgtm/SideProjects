@@ -8,8 +8,7 @@ import SyncModal from "@/components/SyncModal";
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { settings, toggleNotifications, requestPermission, permissionState } =
-    useNotifications();
+  const { settings, permissionState } = useNotifications();
   const [syncOpen, setSyncOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -17,18 +16,8 @@ export default function Navbar() {
     { href: "/", label: "Search" },
     { href: "/dashboard", label: "Dashboard" },
     { href: "/calendar", label: "Calendar" },
-    { href: "/schedule", label: "Schedule" },
     { href: "/lists", label: "My Lists" },
   ];
-
-  const handleNotificationToggle = async () => {
-    if (permissionState === "default") {
-      const granted = await requestPermission();
-      if (granted) toggleNotifications();
-    } else if (permissionState === "granted") {
-      toggleNotifications();
-    }
-  };
 
   return (
     <nav className="bg-[#1e293b] border-b border-[#334155] sticky top-0 z-50">
@@ -66,21 +55,21 @@ export default function Navbar() {
               </svg>
               <span className="hidden sm:inline">Sync</span>
             </button>
-            <button
-              onClick={handleNotificationToggle}
+            <Link
+              href="/notifications"
               className={`flex items-center gap-1.5 px-2 sm:px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                settings.enabled
+                pathname === "/notifications"
+                  ? "bg-blue-600 text-white"
+                  : settings.enabled
                   ? "bg-green-600/20 text-green-400 hover:bg-green-600/30"
                   : "text-slate-400 hover:bg-[#334155] hover:text-white"
               }`}
               title={
                 permissionState === "denied"
                   ? "Notifications blocked by browser"
-                  : permissionState === "unsupported"
-                  ? "Notifications not supported"
                   : settings.enabled
                   ? "Notifications enabled"
-                  : "Enable notifications"
+                  : "Notification settings"
               }
             >
               <svg
@@ -102,7 +91,7 @@ export default function Navbar() {
                   <span>{settings.enabled ? "On" : "Off"}</span>
                 )}
               </span>
-            </button>
+            </Link>
             {/* Mobile hamburger */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

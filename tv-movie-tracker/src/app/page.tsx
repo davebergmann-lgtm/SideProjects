@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import SearchBar from "@/components/SearchBar";
 import ShowCard from "@/components/ShowCard";
 import MovieCard from "@/components/MovieCard";
+import Recommendations from "@/components/Recommendations";
 import { searchShows, type SearchResult } from "@/lib/tvmaze";
 import { searchMovies, type TMDBMovie } from "@/lib/tmdb";
 
@@ -15,9 +16,11 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("shows");
+  const [lastQuery, setLastQuery] = useState("");
 
   const handleSearch = useCallback(async (query: string) => {
     setIsLoading(true);
+    setLastQuery(query);
     try {
       const [shows, movies] = await Promise.all([
         searchShows(query).catch(() => [] as SearchResult[]),
@@ -38,6 +41,8 @@ export default function HomePage() {
   }, []);
 
   const currentResults = activeTab === "shows" ? showResults : movieResults;
+  const topShowResult = showResults.length > 0 ? showResults[0].show : null;
+  const topMovieResult = movieResults.length > 0 ? movieResults[0] : null;
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -51,6 +56,14 @@ export default function HomePage() {
       </div>
 
       <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+
+      {/* Recommendations */}
+      <Recommendations
+        searchQuery={lastQuery}
+        topShowResult={topShowResult}
+        topMovieResult={topMovieResult}
+        hasSearched={hasSearched}
+      />
 
       {/* Tabs */}
       {hasSearched && (

@@ -53,3 +53,10 @@ export async function getMovie(id: number): Promise<TMDBMovie | null> {
   if (!res.ok) return null;
   return res.json();
 }
+
+export async function getMovieRecommendations(id: number): Promise<TMDBMovie[]> {
+  const res = await fetch(`/api/tmdb?action=movie_recommendations&id=${id}`);
+  if (!res.ok) return [];
+  const data: TMDBSearchResult = await res.json();
+  return data.results || [];
+}

@@ -57,14 +57,6 @@ export default function HomePage() {
 
       <SearchBar onSearch={handleSearch} isLoading={isLoading} />
 
-      {/* Recommendations */}
-      <Recommendations
-        searchQuery={lastQuery}
-        topShowResult={topShowResult}
-        topMovieResult={topMovieResult}
-        hasSearched={hasSearched}
-      />
-
       {/* Tabs */}
       {hasSearched && (
         <div className="flex justify-center">
@@ -103,6 +95,14 @@ export default function HomePage() {
           </div>
         )}
       </div>
+
+      {/* Recommendations - below search results */}
+      <Recommendations
+        searchQuery={lastQuery}
+        topShowResult={topShowResult}
+        topMovieResult={topMovieResult}
+        hasSearched={hasSearched}
+      />
     </div>
   );
 }

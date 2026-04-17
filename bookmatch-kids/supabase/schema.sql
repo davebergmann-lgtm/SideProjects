@@ -71,8 +71,6 @@ drop policy if exists "children: parent all" on public.children;
 create policy "children: parent all" on public.children
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
--- Enforce max 3 children per user at the free/family tier.
--- Phase 1: hard cap at 3 for all users. Phase 2+ will relax for higher tiers.
 create or replace function public.enforce_child_limit()
 returns trigger
 language plpgsql
@@ -187,7 +185,43 @@ create policy "reading_lists: parent all" on public.reading_lists
   );
 
 -- =====================================================================
--- Groups: membership helpers used by RLS policies
+-- Groups (table first, before helper functions that reference group_members)
+-- =====================================================================
+create table if not exists public.groups (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  created_by uuid references public.profiles on delete set null,
+  invite_code text unique default substring(md5(random()::text) from 1 for 8),
+  tier text check (tier in ('starter','plus','pro')) not null,
+  max_families int not null,
+  created_at timestamptz default now(),
+  expires_at timestamptz default (now() + interval '1 year')
+);
+
+create index if not exists groups_invite_code_idx on public.groups(invite_code);
+
+alter table public.groups enable row level security;
+
+-- =====================================================================
+-- Group members (table must exist before is_group_member / is_group_admin)
+-- =====================================================================
+create table if not exists public.group_members (
+  id uuid primary key default gen_random_uuid(),
+  group_id uuid references public.groups on delete cascade not null,
+  user_id uuid references public.profiles on delete cascade not null,
+  role text default 'member' check (role in ('admin','member')),
+  share_ratings boolean default false,
+  joined_at timestamptz default now(),
+  unique (group_id, user_id)
+);
+
+create index if not exists group_members_group_idx on public.group_members(group_id);
+create index if not exists group_members_user_idx on public.group_members(user_id);
+
+alter table public.group_members enable row level security;
+
+-- =====================================================================
+-- Groups: membership helpers (now safe — both tables exist)
 -- =====================================================================
 create or replace function public.is_group_member(g uuid, u uuid)
 returns boolean
@@ -219,30 +253,12 @@ grant execute on function public.is_group_member(uuid, uuid) to authenticated;
 grant execute on function public.is_group_admin(uuid, uuid) to authenticated;
 
 -- =====================================================================
--- Groups
+-- Groups: RLS policies (depend on is_group_member / is_group_admin)
 -- =====================================================================
-create table if not exists public.groups (
-  id uuid primary key default gen_random_uuid(),
-  name text not null,
-  created_by uuid references public.profiles on delete set null,
-  invite_code text unique default substring(md5(random()::text) from 1 for 8),
-  tier text check (tier in ('starter','plus','pro')) not null,
-  max_families int not null,
-  created_at timestamptz default now(),
-  expires_at timestamptz default (now() + interval '1 year')
-);
-
-create index if not exists groups_invite_code_idx on public.groups(invite_code);
-
-alter table public.groups enable row level security;
-
--- Members can see their own groups.
 drop policy if exists "groups: member read" on public.groups;
 create policy "groups: member read" on public.groups
   for select using (public.is_group_member(id, auth.uid()));
 
--- Users can create groups with themselves as the creator; app code gates by
--- subscription tier before calling insert.
 drop policy if exists "groups: creator insert" on public.groups;
 create policy "groups: creator insert" on public.groups
   for insert with check (auth.uid() = created_by);
@@ -256,43 +272,22 @@ create policy "groups: admin delete" on public.groups
   for delete using (public.is_group_admin(id, auth.uid()));
 
 -- =====================================================================
--- Group members
+-- Group members: RLS policies
 -- =====================================================================
-create table if not exists public.group_members (
-  id uuid primary key default gen_random_uuid(),
-  group_id uuid references public.groups on delete cascade not null,
-  user_id uuid references public.profiles on delete cascade not null,
-  role text default 'member' check (role in ('admin','member')),
-  share_ratings boolean default false,
-  joined_at timestamptz default now(),
-  unique (group_id, user_id)
-);
-
-create index if not exists group_members_group_idx on public.group_members(group_id);
-create index if not exists group_members_user_idx on public.group_members(user_id);
-
-alter table public.group_members enable row level security;
-
--- See fellow members of groups you belong to.
 drop policy if exists "group_members: fellow read" on public.group_members;
 create policy "group_members: fellow read" on public.group_members
   for select using (public.is_group_member(group_id, auth.uid()));
 
--- A user can insert themselves (join). App code verifies the invite code
--- and the family cap before inserting.
 drop policy if exists "group_members: self join" on public.group_members;
 create policy "group_members: self join" on public.group_members
   for insert with check (auth.uid() = user_id);
 
--- Users can leave their own membership; admins can remove others.
 drop policy if exists "group_members: self or admin delete" on public.group_members;
 create policy "group_members: self or admin delete" on public.group_members
   for delete using (
     auth.uid() = user_id or public.is_group_admin(group_id, auth.uid())
   );
 
--- Users can update their own row (share_ratings toggle); admins can update
--- anyone's role.
 drop policy if exists "group_members: self update" on public.group_members;
 create policy "group_members: self update" on public.group_members
   for update using (

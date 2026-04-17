@@ -110,11 +110,11 @@ export default function Recommendations({ searchQuery, topShowResult, topMovieRe
 
     async function fetchListBasedRecs() {
       const savedMovies = Array.from(allSavedMovieIds);
-      const savedShows: { id: number; genres: string[] }[] = [];
+      const savedShows: { id: number; name: string; genres: string[] }[] = [];
       lists.forEach((list) =>
         list.shows.forEach((s) => {
           if (!s.type || s.type === "show") {
-            savedShows.push({ id: s.id, genres: s.genres || [] });
+            savedShows.push({ id: s.id, name: s.name, genres: s.genres || [] });
           }
         })
       );
@@ -124,7 +124,7 @@ export default function Recommendations({ searchQuery, topShowResult, topMovieRe
         return;
       }
 
-      const fetchKey = `lists-${savedMovies.sort().join(",")}-${savedShows.map((s) => s.id).sort().join(",")}`;
+      const fetchKey = `lists-${[...savedMovies].sort().join(",")}-${savedShows.map((s) => s.id).sort().join(",")}`;
       if (fetchKey === lastFetchKey.current) return;
       lastFetchKey.current = fetchKey;
 
@@ -135,24 +135,34 @@ export default function Recommendations({ searchQuery, topShowResult, topMovieRe
 
       if (savedMovies.length > 0) {
         const randomMovieId = savedMovies[Math.floor(Math.random() * savedMovies.length)];
-        const movieRecs = await getMovieRecommendations(randomMovieId);
-        const filtered = movieRecs
-          .filter((m) => !allSavedMovieIds.has(m.id))
-          .slice(0, 4)
-          .map(movieToRec);
-        items.push(...filtered);
+        const movieRecs = await getMovieRecommendations(randomMovieId).catch(() => []);
+        if (!cancelled) {
+          const filtered = movieRecs
+            .filter((m) => !allSavedMovieIds.has(m.id))
+            .slice(0, savedShows.length > 0 ? 4 : 6)
+            .map(movieToRec);
+          items.push(...filtered);
+        }
       }
 
-      if (savedShows.length > 0) {
+      if (savedShows.length > 0 && !cancelled) {
         const allGenres = savedShows.flatMap((s) => s.genres);
         const uniqueGenres = Array.from(new Set(allGenres));
+
+        let searchTerm: string;
         if (uniqueGenres.length > 0) {
-          const searchTerm = uniqueGenres.slice(0, 2).join(" ");
-          const results = await searchShows(searchTerm).catch(() => []);
+          searchTerm = uniqueGenres.slice(0, 2).join(" ");
+        } else {
+          const randomShow = savedShows[Math.floor(Math.random() * savedShows.length)];
+          searchTerm = randomShow.name;
+        }
+
+        const results = await searchShows(searchTerm).catch(() => []);
+        if (!cancelled) {
           const filtered = results
             .map((r) => r.show)
             .filter((s) => !allSavedShowIds.has(s.id))
-            .slice(0, 4)
+            .slice(0, savedMovies.length > 0 ? 4 : 6)
             .map(showToRec);
           items.push(...filtered);
         }

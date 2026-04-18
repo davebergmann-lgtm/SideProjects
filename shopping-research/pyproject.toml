@@ -10,10 +10,11 @@ requires-python = ">=3.11"
 dependencies = [
     "anthropic>=0.40.0",
     "rich>=13.7.0",
+    "streamlit>=1.35.0",
 ]
 
 [project.scripts]
 omni-shopper = "research_tool:main"
 
 [tool.setuptools]
-py-modules = ["research_tool", "prompts"]
+py-modules = ["research_tool", "prompts", "app"]

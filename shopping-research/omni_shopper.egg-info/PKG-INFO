@@ -1,0 +1,7 @@
+Metadata-Version: 2.4
+Name: omni-shopper
+Version: 0.1.0
+Summary: AI-powered shopping research CLI
+Requires-Python: >=3.11
+Requires-Dist: anthropic>=0.40.0
+Requires-Dist: rich>=13.7.0

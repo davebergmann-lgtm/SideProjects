@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "omni-shopper"
+version = "0.1.0"
+description = "AI-powered shopping research CLI"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.40.0",
+    "rich>=13.7.0",
+]
+
+[project.scripts]
+omni-shopper = "research_tool:main"
+
+[tool.setuptools]
+py-modules = ["research_tool", "prompts"]

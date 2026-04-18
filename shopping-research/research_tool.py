@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Shopping Research Tool — AI-powered product research for smarter buying decisions."""
+"""Omni-Shopper — AI-powered product research CLI."""
 
+import argparse
 import json
 import os
 import sys
@@ -21,8 +22,10 @@ console = Console()
 MODEL = "claude-opus-4-7"
 
 
+# ── Claude calls ─────────────────────────────────────────────────────────────
+
 def generate_questions(client: anthropic.Anthropic, product: str, use_case: str) -> list[str]:
-    """Generate product-specific questions using Claude with cached system prompt."""
+    """Ask Claude to generate product-specific research questions (cached system prompt)."""
     response = client.messages.create(
         model=MODEL,
         max_tokens=1024,
@@ -36,7 +39,11 @@ def generate_questions(client: anthropic.Anthropic, product: str, use_case: str)
         messages=[
             {
                 "role": "user",
-                "content": f"Product I'm researching: {product}\nMy intended use: {use_case}\n\nGenerate targeted questions.",
+                "content": (
+                    f"Product I'm researching: {product}\n"
+                    f"My intended use: {use_case}\n\n"
+                    "Generate targeted questions."
+                ),
             }
         ],
     )
@@ -56,26 +63,32 @@ def run_research(
     use_case: str,
     qa_pairs: list[tuple[str, str]],
 ) -> str:
-    """Research products using web_search with the correct server-side tool loop."""
-    qa_text = "\n".join(f"Q: {q}\nA: {a}" for q, a in qa_pairs)
+    """Research products via web_search (server-side tool, correct pause_turn loop)."""
+    qa_section = (
+        "\n".join(f"Q: {q}\nA: {a}" for q, a in qa_pairs)
+        if qa_pairs
+        else "(No additional requirements specified.)"
+    )
 
-    user_context = f"""Research the best {product} options for this user.
+    messages = [
+        {
+            "role": "user",
+            "content": (
+                f"Research the best {product} options for this user.\n\n"
+                f"PRODUCT: {product}\n"
+                f"USE CASE: {use_case}\n\n"
+                f"USER REQUIREMENTS (from Q&A):\n{qa_section}\n\n"
+                "Search for current top-rated products, prices, and expert reviews that match "
+                "these specific requirements. Generate a comprehensive buying guide."
+            ),
+        }
+    ]
 
-PRODUCT: {product}
-USE CASE: {use_case}
-
-USER REQUIREMENTS (from Q&A):
-{qa_text}
-
-Please search for current top-rated products, prices, and reviews that match these specific requirements. Generate a comprehensive buying guide."""
-
-    messages = [{"role": "user", "content": user_context}]
-
-    # Server-side tool loop: web_search runs on Anthropic's servers.
-    # We loop until end_turn. On pause_turn (10-iteration server limit),
-    # we re-send with the assistant response appended — no new user message.
-    max_continuations = 5
-    for _ in range(max_continuations):
+    # web_search_20260209 is a server-side tool — Anthropic runs the searches.
+    # Loop: end_turn → done. pause_turn → server hit its 10-iteration limit;
+    # append assistant content and resend WITHOUT a new user message so the
+    # API detects the trailing server_tool_use block and resumes automatically.
+    for _ in range(5):
         response = client.messages.create(
             model=MODEL,
             max_tokens=4096,
@@ -94,43 +107,62 @@ Please search for current top-rated products, prices, and reviews that match the
             break
 
         if response.stop_reason == "pause_turn":
-            # Server hit its internal tool-loop limit — append and continue.
-            # Don't add a new user message; the API detects the trailing
-            # server_tool_use block and resumes automatically.
             messages.append({"role": "assistant", "content": response.content})
             continue
 
-        # Shouldn't happen for server-side tools, but be safe.
-        break
+        break  # unexpected stop reason
 
-    # Extract all text blocks from the final response
-    text_parts = [block.text for block in response.content if hasattr(block, "text")]
-    return "\n\n".join(text_parts)
+    return "\n\n".join(
+        block.text for block in response.content if hasattr(block, "text")
+    )
 
+
+# ── Helpers ──────────────────────────────────────────────────────────────────
 
 def save_report(product: str, report: str) -> Path:
-    """Save the report to a markdown file."""
     reports_dir = Path(__file__).parent / "reports"
     reports_dir.mkdir(exist_ok=True)
+    safe = "".join(c if c.isalnum() or c in " -_" else "" for c in product)
+    safe = safe.strip().replace(" ", "-").lower()
+    path = reports_dir / f"{safe}-{datetime.now().strftime('%Y%m%d-%H%M')}.md"
+    path.write_text(f"# Shopping Research: {product}\n\n{report}\n")
+    return path
 
-    safe_name = "".join(c if c.isalnum() or c in " -_" else "" for c in product)
-    safe_name = safe_name.strip().replace(" ", "-").lower()
-    timestamp = datetime.now().strftime("%Y%m%d-%H%M")
-    filepath = reports_dir / f"{safe_name}-{timestamp}.md"
 
-    filepath.write_text(f"# Shopping Research: {product}\n\n{report}\n")
-    return filepath
+def parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(
+        prog="omni-shopper",
+        description="AI-powered product research — ask the right questions, then search the web.",
+    )
+    p.add_argument("-p", "--product", help="Product to research (skips first prompt)")
+    p.add_argument("-u", "--use-case", dest="use_case", help="Intended use (skips second prompt)")
+    p.add_argument(
+        "--no-questions",
+        action="store_true",
+        help="Skip the Q&A phase and go straight to research",
+    )
+    p.add_argument(
+        "--no-save",
+        action="store_true",
+        help="Don't save the report to disk",
+    )
+    return p.parse_args()
 
+
+# ── Main ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
+    args = parse_args()
+
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
-        console.print("[red]Error: ANTHROPIC_API_KEY environment variable not set.[/red]")
+        console.print("[red]Error: ANTHROPIC_API_KEY is not set.[/red]")
+        console.print("[dim]  export ANTHROPIC_API_KEY=sk-ant-...[/dim]")
         sys.exit(1)
 
     client = anthropic.Anthropic(api_key=api_key)
 
-    # ── Header ──────────────────────────────────────────────────────────────
+    # ── Header ───────────────────────────────────────────────────────────────
     console.print()
     console.print(
         Panel.fit(
@@ -141,62 +173,69 @@ def main() -> None:
     )
     console.print()
 
-    # ── Step 1: Product + Use Case ───────────────────────────────────────────
-    product = Prompt.ask("[bold]What product are you researching?[/bold]")
-    use_case = Prompt.ask("[bold]What will you use it for?[/bold] [dim](be specific)[/dim]")
-    console.print()
-
-    # ── Step 2: Generate Questions ───────────────────────────────────────────
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[dim]Generating personalized questions...[/dim]"),
-        console=console,
-        transient=True,
-    ) as progress:
-        progress.add_task("", total=None)
-        try:
-            questions = generate_questions(client, product, use_case)
-        except Exception as e:
-            console.print(f"[red]Failed to generate questions: {e}[/red]")
-            sys.exit(1)
-
-    console.print(
-        f"[bold green]✓[/bold green] Got [bold]{len(questions)}[/bold] questions tailored to your search.\n"
+    # ── Step 1: Product + use case ────────────────────────────────────────────
+    product = args.product or Prompt.ask("[bold]What product are you researching?[/bold]")
+    use_case = args.use_case or Prompt.ask(
+        "[bold]What will you use it for?[/bold] [dim](be specific)[/dim]"
     )
-
-    # ── Step 3: Interactive Q&A ──────────────────────────────────────────────
-    console.print(Rule("[dim]Answer each question — press Enter to skip[/dim]"))
     console.print()
 
+    # ── Step 2: Generate questions ────────────────────────────────────────────
     qa_pairs: list[tuple[str, str]] = []
-    for i, question in enumerate(questions, 1):
-        answer = Prompt.ask(f"[cyan]{i}.[/cyan] {question}")
-        if answer.strip():
-            qa_pairs.append((question, answer.strip()))
+
+    if not args.no_questions:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[dim]Generating personalized questions...[/dim]"),
+            console=console,
+            transient=True,
+        ) as prog:
+            prog.add_task("", total=None)
+            try:
+                questions = generate_questions(client, product, use_case)
+            except Exception as e:
+                console.print(f"[red]Failed to generate questions: {e}[/red]")
+                sys.exit(1)
+
+        console.print(
+            f"[bold green]✓[/bold green] {len(questions)} questions tailored to your search.\n"
+        )
+
+        # ── Step 3: Interactive Q&A ───────────────────────────────────────────
+        console.print(Rule("[dim]Answer each question — press Enter to skip[/dim]"))
         console.print()
 
-    if not qa_pairs:
-        console.print("[yellow]No answers provided — proceeding with general research.[/yellow]\n")
+        for i, question in enumerate(questions, 1):
+            answer = Prompt.ask(f"[cyan]{i}.[/cyan] {question}")
+            if answer.strip():
+                qa_pairs.append((question, answer.strip()))
+            console.print()
 
-    # ── Step 4: Research ─────────────────────────────────────────────────────
+        if not qa_pairs:
+            console.print(
+                "[yellow]No answers provided — proceeding with general research.[/yellow]\n"
+            )
+
+    # ── Step 4: Research ──────────────────────────────────────────────────────
     console.print(Rule())
     console.print()
     with Progress(
         SpinnerColumn(),
         TextColumn(
-            f"[bold yellow]Researching {product}...[/bold yellow] [dim](searching the web, may take 30–60s)[/dim]"
+            f"[bold yellow]Researching {product}...[/bold yellow]"
+            " [dim](searching the web, 30–60 s)[/dim]"
         ),
         console=console,
         transient=True,
-    ) as progress:
-        progress.add_task("", total=None)
+    ) as prog:
+        prog.add_task("", total=None)
         try:
             report = run_research(client, product, use_case, qa_pairs)
         except Exception as e:
             console.print(f"[red]Research failed: {e}[/red]")
             sys.exit(1)
 
-    # ── Step 5: Display Report ───────────────────────────────────────────────
+    # ── Step 5: Display ───────────────────────────────────────────────────────
     console.print()
     console.print(
         Panel(
@@ -207,12 +246,13 @@ def main() -> None:
         )
     )
 
-    # ── Step 6: Save Report ──────────────────────────────────────────────────
-    try:
-        filepath = save_report(product, report)
-        console.print(f"\n[dim]Report saved → {filepath}[/dim]")
-    except Exception:
-        pass  # Saving is best-effort
+    # ── Step 6: Save ──────────────────────────────────────────────────────────
+    if not args.no_save:
+        try:
+            path = save_report(product, report)
+            console.print(f"\n[dim]Saved → {path}[/dim]")
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":

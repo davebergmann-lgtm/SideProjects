@@ -1,0 +1,10 @@
+README.md
+prompts.py
+pyproject.toml
+research_tool.py
+omni_shopper.egg-info/PKG-INFO
+omni_shopper.egg-info/SOURCES.txt
+omni_shopper.egg-info/dependency_links.txt
+omni_shopper.egg-info/entry_points.txt
+omni_shopper.egg-info/requires.txt
+omni_shopper.egg-info/top_level.txt

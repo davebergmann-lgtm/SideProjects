@@ -1,0 +1,2 @@
+[console_scripts]
+omni-shopper = research_tool:main

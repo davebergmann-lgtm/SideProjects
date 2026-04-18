@@ -191,10 +191,15 @@ elif st.session_state.phase == "qa":
     st.divider()
     st.markdown("Answer what you know — leave anything blank to skip.")
 
+    # Build a lookup of previous answers so edits are pre-populated
+    prev = dict(st.session_state.qa_pairs)
+
     with st.form("qa_form"):
         answers: dict[str, str] = {}
         for i, question in enumerate(st.session_state.questions, 1):
-            answers[question] = st.text_input(f"{i}. {question}", key=f"q{i}")
+            answers[question] = st.text_input(
+                f"{i}. {question}", value=prev.get(question, ""), key=f"q{i}"
+            )
 
         col1, col2 = st.columns([1, 3])
         with col1:
@@ -248,18 +253,22 @@ elif st.session_state.phase == "researching":
 elif st.session_state.phase == "report":
     st.success(f"Research complete: **{st.session_state.product}**")
 
-    col1, col2 = st.columns([3, 1])
+    col1, col2, col3 = st.columns([2, 2, 1])
+    with col1:
+        if st.button("🔄 New Search"):
+            reset()
+            st.rerun()
     with col2:
+        if st.button("✏️ Edit Answers"):
+            st.session_state.phase = "qa"
+            st.rerun()
+    with col3:
         st.download_button(
             "⬇ Download",
             data=f"# Shopping Research: {st.session_state.product}\n\n{st.session_state.report}",
             file_name=f"{st.session_state.product.lower().replace(' ', '-')}-research.md",
             mime="text/markdown",
         )
-    with col1:
-        if st.button("🔄 New Search"):
-            reset()
-            st.rerun()
 
     st.divider()
     st.markdown(st.session_state.report)

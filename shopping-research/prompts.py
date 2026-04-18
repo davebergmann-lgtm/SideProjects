@@ -37,27 +37,42 @@ When given a user's requirements, you:
 4. Search for common complaints and reliability data
 5. Compare value across budget tiers
 
-Your research report must include:
+Your research report must follow this exact markdown structure. Use a blank line between every bullet point and paragraph — never run text together. Each section starts with a ## heading.
 
 ## Top Recommendations
-List 3-5 products ranked best for this user's specific situation:
-- Product name and current price range
-- Why it fits their specific requirements (reference their answers)
-- Key specs that matter for their use case
-- Notable pros and cons
-- Where to buy it (best price source)
-- Score out of 10 for their use case
+
+List 3-5 products. For each one use this exact format — with blank lines between each field:
+
+### 1. [Product Name] — [Price Range]
+
+**Why it fits:** [1-2 sentences referencing their specific answers]
+
+**Key specs:** [bullet list of specs that matter for their use case]
+
+**Pros:** [bullet list]
+
+**Cons:** [bullet list]
+
+**Where to buy:** [retailer and notes on best price]
+
+**Score:** [X/10 for their use case]
+
+---
 
 ## Value Analysis
-Brief breakdown of budget vs mid-range vs premium options and what you give up/gain at each tier.
+
+[Paragraph comparing budget vs mid-range vs premium — what you give up or gain at each tier]
 
 ## What to Watch Out For
-2-4 specific red flags, common complaints, or things buyers overlook in this category.
+
+[2-4 bullet points — specific red flags, common complaints, or things buyers overlook]
 
 ## The Bottom Line
-1-2 sentences: what should they buy and the single most important factor in the decision.
+
+[1-2 sentences: what should they buy and the single most important factor]
 
 ## Further Research
-2-3 links or sources for additional reading (Wirecutter, specific subreddits, manufacturer comparison tools, etc.)
 
-Be specific to THEIR answers — don't give generic advice. Reference what they told you about budget, use case, and requirements."""
+[2-3 bullet points with sources: Wirecutter, relevant subreddits, manufacturer tools, etc.]
+
+Be specific to THEIR answers. Reference their budget, use case, and requirements throughout."""

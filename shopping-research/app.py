@@ -21,9 +21,58 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-  .block-container { max-width: 760px; padding-top: 2rem; }
-  .stButton > button { width: 100%; }
+  /* ── Font: lock everything to one stack ── */
+  html, body, [class*="css"], .stMarkdown, .stMarkdown p,
+  .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
+  .stMarkdown h4, .stMarkdown li, .stMarkdown a,
+  .stTextInput input, .stTextArea textarea,
+  .stButton > button, .stDownloadButton > button,
+  .stAlert, .stSuccess {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 Roboto, Helvetica, Arial, sans-serif !important;
+    font-variant-ligatures: none;
+  }
+
+  /* ── Layout ── */
+  .block-container {
+    max-width: 720px;
+    padding-top: 1.5rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* ── Report typography: consistent spacing ── */
+  .stMarkdown h2 { margin-top: 1.6rem; margin-bottom: 0.4rem; font-size: 1.2rem; }
+  .stMarkdown h3 { margin-top: 1.2rem; margin-bottom: 0.3rem; font-size: 1rem; }
+  .stMarkdown p  { margin-bottom: 0.6rem; line-height: 1.6; }
+  .stMarkdown li { margin-bottom: 0.3rem; line-height: 1.6; }
+  .stMarkdown ul, .stMarkdown ol { margin-bottom: 0.8rem; }
+  /* Prevent bold text from inheriting a different font */
+  .stMarkdown strong, .stMarkdown b { font-family: inherit !important; }
+  /* Remove code-block font from inline code in the report */
+  .stMarkdown code {
+    font-family: inherit !important;
+    background: #f0f2f6;
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+  }
+
+  /* ── Buttons: full-width, comfortable tap target ── */
+  .stButton > button, .stDownloadButton > button {
+    width: 100%;
+    min-height: 2.75rem;
+    font-size: 0.95rem;
+  }
+
+  /* ── Forms ── */
   div[data-testid="stForm"] { border: none; padding: 0; }
+
+  /* ── Mobile: tighter padding on small screens ── */
+  @media (max-width: 480px) {
+    .block-container { padding-left: 0.5rem; padding-right: 0.5rem; }
+    .stMarkdown h2 { font-size: 1.05rem; }
+    .stTextInput input, .stTextArea textarea { font-size: 1rem; }
+  }
 </style>
 """, unsafe_allow_html=True)
 

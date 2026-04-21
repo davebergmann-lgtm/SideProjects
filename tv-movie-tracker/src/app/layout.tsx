@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import { ListsProvider } from "@/contexts/ListsContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
@@ -15,7 +16,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen font-sans">
         <ListsProvider>
           <NotificationProvider>
-            <Navbar />
+            <Suspense>
+              <Navbar />
+            </Suspense>
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">{children}</main>
           </NotificationProvider>
         </ListsProvider>

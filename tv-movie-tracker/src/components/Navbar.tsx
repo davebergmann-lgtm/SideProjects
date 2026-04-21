@@ -1,34 +1,64 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useNotifications } from "@/contexts/NotificationContext";
 import SyncModal from "@/components/SyncModal";
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { settings, permissionState } = useNotifications();
   const [syncOpen, setSyncOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const mobileInputRef = useRef<HTMLInputElement>(null);
+  const desktopInputRef = useRef<HTMLInputElement>(null);
 
   const links = [
-    { href: "/", label: "Search" },
     { href: "/dashboard", label: "Dashboard" },
     { href: "/calendar", label: "Calendar" },
     { href: "/lists", label: "My Lists" },
   ];
 
+  // Sync search input with URL when on home page
+  useEffect(() => {
+    if (pathname === "/") {
+      setSearchQuery(searchParams.get("q") || "");
+    }
+  }, [pathname, searchParams]);
+
+  // Auto-focus mobile search input when opened
+  useEffect(() => {
+    if (mobileSearchOpen && mobileInputRef.current) {
+      mobileInputRef.current.focus();
+    }
+  }, [mobileSearchOpen]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = searchQuery.trim();
+    if (trimmed.length >= 2) {
+      router.push(`/?q=${encodeURIComponent(trimmed)}`);
+      setMobileSearchOpen(false);
+      setMobileMenuOpen(false);
+      desktopInputRef.current?.blur();
+    }
+  };
+
   return (
     <nav className="bg-[#1e293b] border-b border-[#334155] sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14 sm:h-16">
-          <div className="flex items-center gap-4 sm:gap-8">
-            <Link href="/" className="text-lg sm:text-xl font-bold text-blue-400">
+        <div className="flex items-center justify-between h-14 sm:h-16 gap-2">
+          <div className="flex items-center gap-4 sm:gap-6 flex-shrink-0">
+            <Link href="/" className="text-lg sm:text-xl font-bold text-blue-400 whitespace-nowrap">
               TV Tracker
             </Link>
-            {/* Desktop nav */}
-            <div className="hidden sm:flex gap-1">
+            {/* Desktop nav links */}
+            <div className="hidden md:flex gap-1">
               {links.map((link) => (
                 <Link
                   key={link.href}
@@ -44,7 +74,55 @@ export default function Navbar() {
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-1 sm:gap-2">
+
+          {/* Desktop search */}
+          <form onSubmit={handleSearch} className="hidden sm:flex flex-1 max-w-xs mx-4">
+            <div className="relative w-full">
+              <svg
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+              <input
+                ref={desktopInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search shows & movies..."
+                className="w-full pl-8 pr-3 py-1.5 bg-[#0f172a] border border-[#334155] rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </form>
+
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            {/* Mobile search icon */}
+            <button
+              onClick={() => {
+                setMobileSearchOpen(!mobileSearchOpen);
+                setMobileMenuOpen(false);
+              }}
+              className="sm:hidden flex items-center px-2 py-2 rounded-md text-slate-300 hover:bg-[#334155] hover:text-white transition-colors"
+              aria-label="Search"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                className="w-5 h-5"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+            </button>
+
             <button
               onClick={() => setSyncOpen(true)}
               className="flex items-center gap-1.5 px-2 sm:px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-[#334155] hover:text-white transition-colors"
@@ -94,8 +172,11 @@ export default function Navbar() {
             </Link>
             {/* Mobile hamburger */}
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="sm:hidden flex items-center px-2 py-2 rounded-md text-slate-300 hover:bg-[#334155] hover:text-white transition-colors"
+              onClick={() => {
+                setMobileMenuOpen(!mobileMenuOpen);
+                setMobileSearchOpen(false);
+              }}
+              className="md:hidden flex items-center px-2 py-2 rounded-md text-slate-300 hover:bg-[#334155] hover:text-white transition-colors"
               aria-label="Toggle menu"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
@@ -109,9 +190,39 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+
+      {/* Mobile search dropdown */}
+      {mobileSearchOpen && (
+        <div className="sm:hidden border-t border-[#334155] px-4 py-3">
+          <form onSubmit={handleSearch}>
+            <div className="relative">
+              <svg
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+              <input
+                ref={mobileInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search shows & movies..."
+                className="w-full pl-9 pr-3 py-2.5 bg-[#0f172a] border border-[#334155] rounded-lg text-base text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="sm:hidden border-t border-[#334155] px-4 py-2 space-y-1">
+        <div className="md:hidden border-t border-[#334155] px-4 py-2 space-y-1">
           {links.map((link) => (
             <Link
               key={link.href}

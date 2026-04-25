@@ -10,7 +10,7 @@ import type {
   RecommendedBook,
 } from './types';
 
-const MODEL = 'claude-sonnet-4-20250514';
+const MODEL = 'claude-sonnet-4-6-20250514';
 
 let _client: Anthropic | null = null;
 function client() {

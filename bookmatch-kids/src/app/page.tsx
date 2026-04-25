@@ -34,9 +34,20 @@ export default async function HomePage({
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">
           BookMatch <span className="text-brand-500">for Kids</span>
         </h1>
+        <p className="mt-1 text-sm font-medium text-slate-500">
+          Your kid&apos;s next favorite book, found in seconds.
+        </p>
         <p className="mt-3 text-base text-slate-600">
-          The next perfect book for your kid, without the work. Tell us what
-          they love — we do the rest.
+          BookMatch uses AI to learn what your child loves to read &mdash; and
+          finds more of it. Rate a few books, and our recommendation engine
+          delivers 10 handpicked picks matched to their age, reading level,
+          and taste.
+        </p>
+        <p className="mt-2 text-sm text-slate-500">
+          Built for families and co-ops, the recommendations get smarter with
+          every rating &mdash; powered by community data from real kids on the
+          site &mdash; with Libby, Hoopla, and Amazon links included in every
+          pick so you find free copies first.
         </p>
         <div className="mt-6 flex w-full flex-col gap-3">
           <Link href="/signup" className="btn-primary">

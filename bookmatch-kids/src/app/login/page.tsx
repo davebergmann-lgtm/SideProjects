@@ -10,10 +10,22 @@ export default function LoginPage({
   return (
     <main className="pt-8">
       <Link href="/" className="btn-ghost -ml-3 px-3">
-        ← Back
+        &larr; Back
       </Link>
-      <h1 className="mt-4 text-2xl font-bold text-slate-900">Welcome back</h1>
-      <p className="mt-1 text-sm text-slate-600">Sign in to see your kids&apos; reading lists.</p>
+
+      <div className="mt-4 text-center">
+        <div className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-brand-500 text-2xl">
+          📚
+        </div>
+        <h1 className="text-2xl font-bold text-slate-900">
+          BookMatch <span className="text-brand-500">for Kids</span>
+        </h1>
+        <p className="mt-1 text-xs font-medium text-slate-500">
+          Your kid&apos;s next favorite book, found in seconds.
+        </p>
+      </div>
+
+      <p className="mt-4 text-sm text-slate-600">Sign in to see your kids&apos; reading lists.</p>
 
       <form action={login} className="mt-6 space-y-4">
         <div>

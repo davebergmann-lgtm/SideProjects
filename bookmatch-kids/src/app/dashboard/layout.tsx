@@ -5,11 +5,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div>
       <header className="flex items-center justify-between pt-6">
-        <Link href="/dashboard" className="flex items-center gap-2 text-lg font-bold text-slate-900">
+        <Link href="/dashboard" className="flex items-center gap-2">
           <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500 text-base">
             📚
           </span>
-          BookMatch
+          <div className="leading-tight">
+            <span className="text-lg font-bold text-slate-900">BookMatch</span>
+            <p className="text-[10px] text-slate-400">Your kid&apos;s next favorite book</p>
+          </div>
         </Link>
         <form action={signOut}>
           <button type="submit" className="btn-ghost text-xs">

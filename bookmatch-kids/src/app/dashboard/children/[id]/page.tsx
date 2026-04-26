@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { BookSearch } from '@/components/BookSearch';
+import { BookImport } from '@/components/BookImport';
 import { GenerateListButton } from '@/components/GenerateListButton';
 import { RecommendationCard } from '@/components/RecommendationCard';
 import { READING_LEVELS, RATINGS } from '@/lib/constants';
@@ -201,6 +202,13 @@ export default async function ChildPage({
           Add a book they&apos;ve read
         </h2>
         <BookSearch childId={child.id} />
+      </section>
+
+      <section className="mt-6">
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          Or import a book list
+        </h2>
+        <BookImport childId={child.id} />
       </section>
 
       <section className="mt-8">

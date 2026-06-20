@@ -75,6 +75,7 @@ h1 {
 .meta-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; display: block; }
 .meta-value { font-size: 1.2rem; font-weight: 700; color: var(--gold); }
 .meta-value small { font-size: 0.7rem; color: var(--muted); }
+.meta-date { font-size: 0.72rem; color: var(--muted); display: block; }
 
 /* ── MAIN ──────────────────────────────────────────────────────────────────── */
 main {

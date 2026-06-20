@@ -65,6 +65,25 @@ h1 {
 
 .subtitle { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
 
+.header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.picks-nav-link {
+  color: var(--gold);
+  text-decoration: none;
+  font-size: 0.78rem;
+  border: 1px solid rgba(244,196,48,0.35);
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.picks-nav-link:hover { background: rgba(244,196,48,0.1); }
+
 .header-meta {
   display: flex;
   gap: 1.5rem;

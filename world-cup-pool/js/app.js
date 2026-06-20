@@ -70,7 +70,7 @@ function renderSkeleton() {
       </section>
     </main>
     <footer>
-      <p>Auto-refreshes every 5 minutes · Live data via ESPN · <span id="countdown"></span></p>
+      <p>Group standings auto-refresh every 5 minutes · <span id="countdown"></span></p>
     </footer>
   `;
 }
@@ -94,6 +94,7 @@ function renderHeader(poolAvailToDate) {
     <div class="meta-item">
       <span class="meta-label">Updated</span>
       <span class="meta-value">${lastUpdated ? fmtTime(lastUpdated) : '—'}</span>
+      <span class="meta-date">${lastUpdated ? fmtDate(lastUpdated) : ''}</span>
     </div>
   `;
 }
@@ -248,6 +249,10 @@ function updateCountdown() {
 
 function fmtTime(d) {
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function fmtDate(d) {
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
 function escHtml(s) {

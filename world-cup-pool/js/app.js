@@ -51,8 +51,11 @@ function renderSkeleton() {
             <p class="subtitle">Live Leaderboard</p>
           </div>
         </div>
-        <div class="header-meta" id="headerMeta">
-          <span class="loading-pulse">Loading standings…</span>
+        <div class="header-right">
+          <a href="picks.html" class="picks-nav-link">View All Picks →</a>
+          <div class="header-meta" id="headerMeta">
+            <span class="loading-pulse">Loading standings…</span>
+          </div>
         </div>
       </div>
     </header>

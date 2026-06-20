@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2026 World Cup Pool — All Picks</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .picks-header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+    }
+    .back-link {
+      color: var(--gold);
+      text-decoration: none;
+      font-size: 0.82rem;
+      border: 1px solid rgba(244,196,48,0.3);
+      padding: 0.3rem 0.7rem;
+      border-radius: 6px;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .back-link:hover { background: rgba(244,196,48,0.1); }
+
+    .picks-main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .picks-table-wrap { overflow-x: auto; }
+
+    .picks-table {
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      width: 100%;
+    }
+    .picks-table th {
+      background: var(--navy2);
+      color: var(--gold);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 0.55rem 0.75rem;
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+      text-align: left;
+    }
+    .picks-table td {
+      padding: 0.45rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .picks-table td:first-child {
+      font-weight: 700;
+      color: var(--gold);
+      font-size: 0.78rem;
+      white-space: nowrap;
+    }
+    .picks-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+    .pick-list { list-style: none; padding: 0; margin: 0; }
+    .pick-list li { padding: 0.08rem 0; white-space: nowrap; font-size: 0.8rem; }
+    .pos { color: var(--muted); font-size: 0.68rem; display: inline-block; width: 1rem; }
+
+    .correct { color: var(--green); font-weight: 700; }
+    .wrong   { color: var(--red);   opacity: 0.65; text-decoration: line-through; }
+
+    .thirds-pick { white-space: nowrap; }
+    .thirds-none { color: rgba(255,255,255,0.15); }
+
+    .legend {
+      display: flex;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 0.875rem;
+    }
+    .legend-correct { color: var(--green); font-weight: 600; }
+    .legend-wrong   { color: var(--red);   opacity: 0.65; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="picks-header-inner">
+      <a href="index.html" class="back-link">← Leaderboard</a>
+      <div class="header-title">
+        <span class="trophy">🏆</span>
+        <div>
+          <h1>2026 FIFA World Cup Pool</h1>
+          <p class="subtitle">All Participant Picks</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="picks-main">
+    <div id="groupPicksSection" class="card"></div>
+    <div id="thirdsSection" class="card"></div>
+  </main>
+
+  <footer>
+    <p>Green = confirmed correct · Strikethrough = confirmed wrong · White = undecided</p>
+  </footer>
+
+  <script src="js/picks.js"></script>
+  <script src="js/locked.js"></script>
+  <script>
+    const LETTERS = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+    const participants = PICKS_DATA.participants;
+    const locked = (typeof LOCKED_POSITIONS !== 'undefined') ? LOCKED_POSITIONS : {};
+
+    // Derive the 4 teams in each group from the first participant's picks
+    const groupTeams = {};
+    for (const letter of LETTERS) {
+      groupTeams[letter] = participants[0].groups[letter].ranked.slice();
+    }
+
+    // Returns 'correct', 'wrong', or 'open' for a given pick
+    function pickStatus(letter, team, position) {
+      const locks = locked[letter] || {};
+      if (locks[team] !== undefined) {
+        return locks[team] === position ? 'correct' : 'wrong';
+      }
+      // Another team is locked into this position
+      const occupant = Object.entries(locks).find(([, p]) => p === position);
+      if (occupant) return 'wrong';
+      return 'open';
+    }
+
+    // ── GROUP PICKS TABLE ─────────────────────────────────────────────────────
+    const nameHeaders = participants.map(p => `<th>${p.name}</th>`).join('');
+
+    const groupRows = LETTERS.map(letter => {
+      const cells = participants.map(p => {
+        const ranked = (p.groups[letter] || {}).ranked || [];
+        const items = ranked.map((team, i) => {
+          const pos = i + 1;
+          const status = pickStatus(letter, team, pos);
+          const cls = status === 'correct' ? 'correct' : status === 'wrong' ? 'wrong' : '';
+          return `<li><span class="pos">${pos}.</span><span class="${cls}">${team}</span></li>`;
+        }).join('');
+        return `<td><ul class="pick-list">${items}</ul></td>`;
+      }).join('');
+      return `<tr><td>Group ${letter}</td>${cells}</tr>`;
+    }).join('');
+
+    document.getElementById('groupPicksSection').innerHTML = `
+      <h2 class="section-title">Group Picks</h2>
+      <div class="legend">
+        <span><span class="legend-correct">GREEN</span> = confirmed correct</span>
+        <span><span class="legend-wrong">STRIKETHROUGH</span> = confirmed wrong</span>
+        <span>White = position not yet decided</span>
+      </div>
+      <div class="picks-table-wrap">
+        <table class="picks-table">
+          <thead><tr><th>Group</th>${nameHeaders}</tr></thead>
+          <tbody>${groupRows}</tbody>
+        </table>
+      </div>
+    `;
+
+    // ── ADVANCING THIRDS TABLE ────────────────────────────────────────────────
+    // Show which team from each group each participant picked to advance as 3rd place.
+    // "—" = they didn't pick any team from that group to advance.
+
+    const thirdsRows = LETTERS.map(letter => {
+      const teams = groupTeams[letter];
+      const cells = participants.map(p => {
+        const picks = new Set(p.advancingThirds || []);
+        const picked = teams.find(t => picks.has(t)) || null;
+        if (!picked) return `<td><span class="thirds-none">—</span></td>`;
+        const locks = locked[letter] || {};
+        const lockedPos = locks[picked];
+        let cls = '';
+        if (lockedPos !== undefined) cls = lockedPos === 3 ? 'correct' : 'wrong';
+        return `<td><span class="thirds-pick ${cls}">${picked}</span></td>`;
+      }).join('');
+      return `<tr><td>Group ${letter}</td>${cells}</tr>`;
+    }).join('');
+
+    document.getElementById('thirdsSection').innerHTML = `
+      <h2 class="section-title">Advancing Third-Place Teams</h2>
+      <p class="scoring-note" style="margin-bottom:0.875rem">
+        Each participant picked 8 of 12 third-place teams to advance. Shown is which team from each group they picked — <span style="color:rgba(255,255,255,0.15)">—</span> means they did not pick that group's third-place finisher to advance.
+      </p>
+      <div class="picks-table-wrap">
+        <table class="picks-table">
+          <thead><tr><th>Group</th>${nameHeaders}</tr></thead>
+          <tbody>${thirdsRows}</tbody>
+        </table>
+      </div>
+    `;
+  </script>
+</body>
+</html>

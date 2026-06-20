@@ -148,7 +148,7 @@ const PICKS_DATA = {
         K: { ranked: ["POR", "COL", "COD", "UZB"] },
         L: { ranked: ["ENG", "CRO", "PAN", "GHA"] },
       },
-      advancingThirds: []
+      advancingThirds: ["CZE", "SCO", "AUS", "SWE", "EGY", "NOR", "ALG", "PAN"]
     },
 
     {
@@ -167,7 +167,7 @@ const PICKS_DATA = {
         K: { ranked: ["POR", "COL", "COD", "UZB"] },
         L: { ranked: ["ENG", "CRO", "GHA", "PAN"] },
       },
-      advancingThirds: []
+      advancingThirds: ["CZE", "BIH", "SCO", "PAR", "CIV", "SWE", "IRN", "SEN"]
     },
 
     {
@@ -186,7 +186,7 @@ const PICKS_DATA = {
         K: { ranked: ["POR", "COL", "COD", "UZB"] },
         L: { ranked: ["ENG", "CRO", "GHA", "PAN"] },
       },
-      advancingThirds: []
+      advancingThirds: ["RSA", "CAN", "HAI", "SWE", "EGY", "SAU", "AUT", "GHA"]
     },
 
     {
@@ -205,7 +205,7 @@ const PICKS_DATA = {
         K: { ranked: ["POR", "COL", "COD", "UZB"] },
         L: { ranked: ["ENG", "CRO", "PAN", "GHA"] },
       },
-      advancingThirds: []
+      advancingThirds: ["KOR", "SCO", "PAR", "JPN", "IRN", "NOR", "AUT", "PAN"]
     },
 
   ]

@@ -206,6 +206,38 @@ function parseESPNStandings(data) {
   return groups;
 }
 
+// Apply manually confirmed locked positions on top of ESPN data.
+// Overrides ESPN-derived lockedRanks entirely — prevents false positives.
+function applyLockedPositions(groups) {
+  if (typeof LOCKED_POSITIONS === 'undefined') return groups;
+
+  for (const letter of GROUPS) {
+    const entries = groups[letter];
+    if (!entries) continue;
+
+    // Clear ALL ESPN-derived lockedRanks for this group first
+    for (const entry of entries) {
+      entry.lockedRank = null;
+    }
+
+    // Apply only manually confirmed locks
+    const locks = LOCKED_POSITIONS[letter] || {};
+    for (const [teamCode, position] of Object.entries(locks)) {
+      const entry = entries.find(e => normalizeTeam(e.team) === teamCode);
+      if (entry) entry.lockedRank = position;
+    }
+
+    // If all 4 positions are manually confirmed, lock remaining by current rank
+    if (Object.keys(locks).length === 4) {
+      for (const entry of entries) {
+        if (entry.lockedRank === null) entry.lockedRank = entry.rank;
+      }
+    }
+  }
+
+  return groups;
+}
+
 async function fetchLiveStandings() {
   for (const url of ESPN_URLS) {
     try {
@@ -215,7 +247,7 @@ async function fetchLiveStandings() {
       const groups = parseESPNStandings(data);
       if (Object.keys(groups).length > 0) {
         console.log('[API] Loaded standings from', url, '— groups:', Object.keys(groups));
-        return groups;
+        return applyLockedPositions(groups);
       }
     } catch (e) {
       console.warn('[API] Failed:', url, e.message);

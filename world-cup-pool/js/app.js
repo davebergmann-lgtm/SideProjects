@@ -19,12 +19,12 @@ async function init() {
 async function refresh() {
   try {
     const groups = await fetchLiveStandings();
-    liveGroups  = groups || getFallbackStandings();
+    liveGroups  = groups || applyLockedPositions(getFallbackStandings());
     lastUpdated = new Date();
     render();
   } catch (e) {
     console.error('Refresh error:', e);
-    liveGroups  = getFallbackStandings();
+    liveGroups  = applyLockedPositions(getFallbackStandings());
     lastUpdated = new Date();
     render();
   }
@@ -149,7 +149,7 @@ function renderLeaderboard(results, poolAvailToDate) {
           <strong>${r.earned}</strong>
           ${poolAvailToDate > 0 ? `<small>${epct}% of decided</small>` : ''}
         </td>
-        <td class="col-avail">${poolAvailToDate}</td>
+        <td class="col-avail">${poolAvailToDate} pts</td>
         <td class="col-max max-cell">${r.maxPossible}</td>
         <td class="col-bar">
           <div class="progress-track">
@@ -164,15 +164,16 @@ function renderLeaderboard(results, poolAvailToDate) {
 
   document.getElementById('leaderboardSection').innerHTML = `
     <h2 class="section-title">Leaderboard</h2>
+    <p class="scoring-note">Maximum possible score: <strong>${SCORING.MAX_TOTAL} pts</strong> &nbsp;(12 groups × 65 pts + 8 advancing thirds × 5 pts)</p>
     <div class="table-scroll">
       <table class="leaderboard-table">
         <thead>
           <tr>
             <th class="col-rank">#</th>
             <th class="col-name">Participant</th>
-            <th class="col-pts" title="Actual points from locked/decided positions">Pts Earned</th>
-            <th class="col-avail" title="Total pts available from decided positions (same for all)">Avail<br>to Date</th>
-            <th class="col-max" title="Best possible final total if remaining picks are all correct">Max<br>Possible</th>
+            <th class="col-pts" title="Points earned from confirmed/locked positions only">Pts Earned</th>
+            <th class="col-avail" title="Total pts up for grabs from positions confirmed so far (same for everyone)">Possible Pts<br>to Date</th>
+            <th class="col-max" title="Best possible final total if all remaining picks are correct">Max<br>Possible</th>
             <th class="col-bar">Progress vs Max Possible</th>
           </tr>
         </thead>
@@ -221,6 +222,13 @@ function renderGroups() {
 
   document.getElementById('groupsSection').innerHTML = `
     <h2 class="section-title">Group Standings</h2>
+    <div class="symbol-key">
+      <span>🔒🥇 Clinched 1st</span>
+      <span>🔒🥈 Clinched 2nd</span>
+      <span>🔒🥉 Clinched 3rd</span>
+      <span>🔒4️⃣ Finished 4th</span>
+      <span>⏳ Position TBD</span>
+    </div>
     <div class="groups-grid">${cards}</div>
   `;
 }

@@ -276,6 +276,24 @@ main {
 .pending-msg { font-size: 0.78rem; color: var(--muted); }
 .demo-notice { margin-top: 0.75rem; font-size: 0.78rem; color: var(--gold); opacity: 0.7; }
 
+.scoring-note {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 0.875rem;
+}
+.scoring-note strong { color: var(--gold); }
+
+.symbol-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
 /* ── LOADING STATE ─────────────────────────────────────────────────────────── */
 .loading-state {
   display: flex;

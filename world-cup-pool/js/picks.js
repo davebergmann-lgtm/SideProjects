@@ -53,7 +53,7 @@ const PICKS_DATA = {
         K: { ranked: ["POR", "COL", "UZB", "COD"] },
         L: { ranked: ["CRO", "ENG", "GHA", "PAN"] },
       },
-      advancingThirds: [] // TODO — add once picks are shared
+      advancingThirds: ["CIV", "SWE", "EGY", "URU", "SEN", "AUT", "UZB", "GHA"]
     },
 
     {
@@ -72,7 +72,7 @@ const PICKS_DATA = {
         K: { ranked: ["POR", "COL", "UZB", "COD"] },
         L: { ranked: ["ENG", "CRO", "PAN", "GHA"] },
       },
-      advancingThirds: []
+      advancingThirds: ["KOR", "BIH", "ECU", "SWE", "EGY", "SAU", "AUT", "PAN"]
     },
 
     {
@@ -91,7 +91,7 @@ const PICKS_DATA = {
         K: { ranked: ["POR", "COL", "UZB", "COD"] },
         L: { ranked: ["ENG", "CRO", "PAN", "GHA"] },
       },
-      advancingThirds: []
+      advancingThirds: ["KOR", "SWE", "IRN", "SAU", "NOR", "ALG", "UZB", "PAN"]
     },
 
     {
@@ -110,7 +110,7 @@ const PICKS_DATA = {
         K: { ranked: ["POR", "COL", "COD", "UZB"] },
         L: { ranked: ["ENG", "CRO", "PAN", "GHA"] },
       },
-      advancingThirds: []
+      advancingThirds: ["CZE", "SCO", "AUS", "CIV", "SWE", "EGY", "SEN", "PAN"]
     },
 
     {
@@ -129,7 +129,7 @@ const PICKS_DATA = {
         K: { ranked: ["COL", "POR", "UZB", "COD"] },
         L: { ranked: ["PAN", "ENG", "CRO", "GHA"] },
       },
-      advancingThirds: []
+      advancingThirds: ["CZE", "BIH", "PAR", "CUW", "SWE", "SAU", "SEN", "CRO"]
     },
 
     {

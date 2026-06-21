@@ -10,5 +10,7 @@
 const LOCKED_POSITIONS = {
   A: { MEX: 1 },           // Mexico clinched Group A 1st
   C: { HAI: 4 },           // Haiti clinched Group C 4th (eliminated)
-  D: { USA: 1 },           // USA clinched Group D 1st
+  D: { USA: 1, TUR: 4 },   // USA clinched 1st, Turkey clinched 4th
+  E: { GER: 1 },           // Germany clinched Group E 1st
+  F: { TUN: 4 },           // Tunisia clinched Group F 4th (eliminated)
 };

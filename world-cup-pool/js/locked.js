@@ -13,4 +13,5 @@ const LOCKED_POSITIONS = {
   D: { USA: 1, TUR: 4 },   // USA clinched 1st, Turkey clinched 4th
   E: { GER: 1 },           // Germany clinched Group E 1st
   F: { TUN: 4 },           // Tunisia clinched Group F 4th (eliminated)
+  J: { ARG: 1 },           // Argentina clinched Group J 1st
 };

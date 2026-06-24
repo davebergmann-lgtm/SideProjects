@@ -8,10 +8,11 @@
 // =============================================================================
 
 const LOCKED_POSITIONS = {
-  A: { MEX: 1 },           // Mexico clinched Group A 1st
-  C: { HAI: 4 },           // Haiti clinched Group C 4th (eliminated)
-  D: { USA: 1, TUR: 4 },   // USA clinched 1st, Turkey clinched 4th
-  E: { GER: 1 },           // Germany clinched Group E 1st
-  F: { TUN: 4 },           // Tunisia clinched Group F 4th (eliminated)
-  J: { ARG: 1 },           // Argentina clinched Group J 1st
+  A: { MEX: 1 },                // Mexico clinched Group A 1st
+  C: { HAI: 4 },                // Haiti clinched Group C 4th (eliminated)
+  D: { USA: 1, TUR: 4 },        // USA clinched 1st, Turkey clinched 4th
+  E: { GER: 1 },                // Germany clinched Group E 1st
+  F: { TUN: 4 },                // Tunisia clinched Group F 4th (eliminated)
+  J: { ARG: 1, JOR: 4 },        // Argentina clinched 1st, Jordan clinched 4th
+  L: { PAN: 4 },                // Panama clinched Group L 4th (eliminated)
 };

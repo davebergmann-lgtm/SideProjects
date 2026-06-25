@@ -8,7 +8,7 @@
 // =============================================================================
 
 const LOCKED_POSITIONS = {
-  A: { MEX: 1 },                // Mexico clinched Group A 1st
+  A: { MEX: 1, RSA: 2, KOR: 3, CZE: 4 }, // Group A final standings
   B: { SUI: 1, CAN: 2, BIH: 3, QAT: 4 }, // Group B final standings
   C: { BRA: 1, MAR: 2, SCO: 3, HAI: 4 }, // Group C final standings
   D: { USA: 1, TUR: 4 },        // USA clinched 1st, Turkey clinched 4th

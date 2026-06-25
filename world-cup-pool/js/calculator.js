@@ -84,84 +84,52 @@ function scoreGroup(picks, entries) {
 
 // Score advancing-3rd picks
 // advancingPicks = array of 8 team abbreviations participant picked to advance
-// liveGroups     = all groups' standings (to find locked 3rd-place teams)
+// liveGroups     = all groups' standings (used only to detect teams locked out of 3rd)
 function scoreAdvancingThirds(advancingPicks, liveGroups) {
   if (!advancingPicks || advancingPicks.length === 0) {
     return { earned: 0, stillPossible: SCORING.MAX_ADVANCING, availToDate: 0 };
   }
 
-  // Collect teams locked in 3rd and their advancement status
-  const lockedThirds = [];     // [{team, advanced}] — teams with locked 3rd place
-  let totalGroupsDone = 0;
+  // Use only manually confirmed advancing thirds from locked.js.
+  // Finishing 3rd in a group does NOT automatically mean a team advances —
+  // FIFA selects the best 8 of 12 third-placers after all groups are done.
+  const confirmedAdvancing = (typeof ADVANCING_THIRDS !== 'undefined')
+    ? new Set(ADVANCING_THIRDS.map(t => normalizeTeam(t)))
+    : new Set();
 
-  for (const letter of GROUPS) {
-    const entries = liveGroups[letter] || [];
-    const third = entries.find(e => e.lockedRank === 3);
-    if (third) {
-      lockedThirds.push({ team: normalizeTeam(third.team), advanced: null }); // TBD
-    }
-    if (entries.length === 4 && entries.every(e => e.gamesPlayed >= 3)) {
-      totalGroupsDone++;
-    }
-  }
-
-  // Advancing 3rd-place teams are only known after ALL 12 groups are done
-  // (FIFA ranks all 12 3rd-placers by Pts / GD / GF / fair play)
-  const allGroupsDone = totalGroupsDone === 12;
-
-  if (!allGroupsDone) {
-    // Can't determine which 3rds advance yet — optimistic max
-    // Deduct for 3rd-place teams definitively blocked from advancing
-    // (e.g., if a team is locked 4th, their spot can't be 3rd)
-    // For now: give each pick still possible if team could still be 3rd
-    let stillPossible = 0;
-    for (const pick of advancingPicks) {
-      const code = normalizeTeam(pick);
-      // Check if this team is locked in a position OTHER than 3rd
-      let lockedOut = false;
-      for (const letter of GROUPS) {
-        const entries = liveGroups[letter] || [];
-        const entry = entries.find(e => normalizeTeam(e.team) === code);
-        if (entry && entry.lockedRank !== null && entry.lockedRank !== 3) {
-          lockedOut = true;
-          break;
-        }
-      }
-      if (!lockedOut) stillPossible += SCORING.ADVANCING_THIRD;
-    }
-    return { earned: 0, stillPossible, availToDate: 0 };
-  }
-
-  // All groups done — determine which 8 of 12 3rd-place teams advance
-  const allThirds = [];
-  for (const letter of GROUPS) {
-    const entries = liveGroups[letter] || [];
-    const third = entries.find(e => e.lockedRank === 3);
-    if (third) {
-      allThirds.push({
-        team: normalizeTeam(third.team),
-        points: third.points || 0,
-        gd: third.gd || 0,
-        gf: third.gf || 0
-      });
-    }
-  }
-
-  // Sort by points → GD → GF (FIFA tiebreaker for 3rd-place teams)
-  allThirds.sort((a, b) =>
-    b.points - a.points || b.gd - a.gd || b.gf - a.gf
-  );
-
-  const advancingSet = new Set(allThirds.slice(0, 8).map(t => t.team));
-  const availToDate = allThirds.length * SCORING.ADVANCING_THIRD; // all decided
+  const allThirdsAnnounced = confirmedAdvancing.size === 8;
+  const availToDate = confirmedAdvancing.size * SCORING.ADVANCING_THIRD;
 
   let earned = 0;
+  let stillPossible = 0;
+
   for (const pick of advancingPicks) {
     const code = normalizeTeam(pick);
-    if (advancingSet.has(code)) earned += SCORING.ADVANCING_THIRD;
+
+    if (confirmedAdvancing.has(code)) {
+      earned += SCORING.ADVANCING_THIRD;
+      continue;
+    }
+
+    // Check if this team is permanently eliminated from the advancing thirds race:
+    // locked into any position other than 3rd in their group
+    let lockedOut = false;
+    for (const letter of GROUPS) {
+      const entries = liveGroups[letter] || [];
+      const entry = entries.find(e => normalizeTeam(e.team) === code);
+      if (entry && entry.lockedRank !== null && entry.lockedRank !== undefined && entry.lockedRank !== 3) {
+        lockedOut = true;
+        break;
+      }
+    }
+
+    if (!lockedOut && !allThirdsAnnounced) {
+      stillPossible += SCORING.ADVANCING_THIRD;
+    }
+    // else: permanently lost (locked out of 3rd, or all 8 are announced and this team isn't one)
   }
 
-  return { earned, stillPossible: 0, availToDate };
+  return { earned, stillPossible, availToDate };
 }
 
 // Main calculation — returns scored result for every participant
@@ -197,8 +165,8 @@ function calculateLeaderboard(participants, liveGroups) {
     };
   });
 
-  // Sort: highest maxPossible first, then highest earned as tiebreaker
-  results.sort((a, b) => b.maxPossible - a.maxPossible || b.earned - a.earned);
+  // Default sort: highest earned first, then highest maxPossible as tiebreaker
+  results.sort((a, b) => b.earned - a.earned || b.maxPossible - a.maxPossible);
 
   // Pool-wide availToDate (max of any entry — same for everyone if all have all groups)
   const poolAvailToDate = results.length > 0

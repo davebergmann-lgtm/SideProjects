@@ -7,6 +7,8 @@ let refreshTimer  = null;
 let nextRefreshAt = null;
 let liveGroups    = {};
 let lastUpdated   = null;
+let sortCol       = 'earned';     // 'earned' or 'maxPossible'
+let sortDir       = 'desc';
 
 // ── MAIN LOOP ────────────────────────────────────────────────────────────────
 
@@ -128,16 +130,41 @@ function renderStatsBar(poolAvailToDate) {
   `;
 }
 
-function renderLeaderboard(results, poolAvailToDate) {
-  const topMax = results.length > 0 ? results[0].maxPossible : SCORING.MAX_TOTAL;
-  const hasDemo = results.some(r => r.demo);
+function applySort(results) {
+  const primary   = sortCol;
+  const secondary = sortCol === 'earned' ? 'maxPossible' : 'earned';
+  const factor    = sortDir === 'desc' ? -1 : 1;
+  return [...results].sort((a, b) =>
+    factor * (b[primary] - a[primary]) || factor * (b[secondary] - a[secondary])
+  );
+}
 
-  const rows = results.map((r, i) => {
+function toggleSort(col) {
+  if (sortCol === col) {
+    sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    sortCol = col;
+    sortDir = 'desc';
+  }
+  render();
+}
+
+function sortArrow(col) {
+  if (sortCol !== col) return '<span class="sort-arrow inactive">↕</span>';
+  return `<span class="sort-arrow">${sortDir === 'desc' ? '↓' : '↑'}</span>`;
+}
+
+function renderLeaderboard(results, poolAvailToDate) {
+  const sorted  = applySort(results);
+  const topMax  = sorted.length > 0 ? sorted[0].maxPossible : SCORING.MAX_TOTAL;
+  const hasDemo = sorted.some(r => r.demo);
+
+  const rows = sorted.map((r, i) => {
     const rank   = i + 1;
     const medal  = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
     const pct    = topMax > 0 ? Math.round((r.maxPossible / topMax) * 100) : 0;
     const epct   = poolAvailToDate > 0 ? Math.round((r.earned / poolAvailToDate) * 100) : 0;
-    const gapPts = i === 0 ? 0 : results[0].maxPossible - r.maxPossible;
+    const gapPts = i === 0 ? 0 : sorted[0].maxPossible - r.maxPossible;
     const gapHtml = gapPts > 0
       ? `<span class="gap">-${gapPts} max pts</span>` : '';
     const earnedBar  = SCORING.MAX_TOTAL > 0
@@ -175,9 +202,13 @@ function renderLeaderboard(results, poolAvailToDate) {
           <tr>
             <th class="col-rank">#</th>
             <th class="col-name">Participant</th>
-            <th class="col-pts" title="Points earned from confirmed/locked positions only">Pts Earned</th>
+            <th class="col-pts sortable ${sortCol === 'earned' ? 'sort-active' : ''}"
+                onclick="toggleSort('earned')"
+                title="Click to sort by pts earned">Pts Earned ${sortArrow('earned')}</th>
             <th class="col-avail" title="Total pts up for grabs from positions confirmed so far (same for everyone)">Possible Pts<br>to Date</th>
-            <th class="col-max" title="Best possible final total if all remaining picks are correct">Max<br>Possible</th>
+            <th class="col-max sortable ${sortCol === 'maxPossible' ? 'sort-active' : ''}"
+                onclick="toggleSort('maxPossible')"
+                title="Click to sort by max possible">Max Possible ${sortArrow('maxPossible')}</th>
             <th class="col-bar">Progress vs Max Possible</th>
           </tr>
         </thead>

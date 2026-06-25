@@ -171,8 +171,13 @@
     `;
 
     // ── ADVANCING THIRDS TABLE ────────────────────────────────────────────────
-    // Show which team from each group each participant picked to advance as 3rd place.
-    // "—" = they didn't pick any team from that group to advance.
+    // Green = FIFA confirmed advancing. Strikethrough = team locked out of 3rd place
+    // (or all 8 thirds announced and this team wasn't selected). White = still TBD.
+
+    const advancingSet = (typeof ADVANCING_THIRDS !== 'undefined')
+      ? new Set(ADVANCING_THIRDS)
+      : new Set();
+    const allThirdsAnnounced = advancingSet.size === 8;
 
     const thirdsRows = LETTERS.map(letter => {
       const teams = groupTeams[letter];
@@ -180,10 +185,16 @@
         const picks = new Set(p.advancingThirds || []);
         const picked = teams.find(t => picks.has(t)) || null;
         if (!picked) return `<td><span class="thirds-none">—</span></td>`;
-        const locks = locked[letter] || {};
-        const lockedPos = locks[picked];
+
         let cls = '';
-        if (lockedPos !== undefined) cls = lockedPos === 3 ? 'correct' : 'wrong';
+        if (advancingSet.has(picked)) {
+          cls = 'correct'; // confirmed advancing to knockout
+        } else {
+          const lockedPos = (locked[letter] || {})[picked];
+          const lockedOutOfThird = lockedPos !== undefined && lockedPos !== 3;
+          if (lockedOutOfThird || allThirdsAnnounced) cls = 'wrong';
+          // else: still possible — no class
+        }
         return `<td><span class="thirds-pick ${cls}">${picked}</span></td>`;
       }).join('');
       return `<tr><td>Group ${letter}</td>${cells}</tr>`;

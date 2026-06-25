@@ -166,6 +166,14 @@ main {
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
+.leaderboard-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+.leaderboard-table th.sortable:hover { color: var(--text); }
+.leaderboard-table th.sort-active { color: var(--gold); }
+.sort-arrow { margin-left: 0.25rem; font-size: 0.8em; }
+.sort-arrow.inactive { opacity: 0.3; }
 
 .leaderboard-table td {
   padding: 0.75rem;

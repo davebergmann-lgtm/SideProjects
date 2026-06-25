@@ -17,3 +17,16 @@ const LOCKED_POSITIONS = {
   J: { ARG: 1, JOR: 4 },        // Argentina clinched 1st, Jordan clinched 4th
   L: { PAN: 4 },                // Panama clinched Group L 4th (eliminated)
 };
+
+// =============================================================================
+// CONFIRMED ADVANCING THIRD-PLACE TEAMS
+// =============================================================================
+// Add team codes here ONLY when FIFA officially confirms they advance to the
+// knockout round. Finishing 3rd in a group does NOT mean they advance yet —
+// all 12 groups must finish before FIFA selects the best 8 of 12 third-placers.
+// =============================================================================
+
+const ADVANCING_THIRDS = [
+  // e.g. 'SCO', 'BIH' — fill in when knockout bracket is announced
+];
+

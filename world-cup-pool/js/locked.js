@@ -27,6 +27,8 @@ const LOCKED_POSITIONS = {
 // =============================================================================
 
 const ADVANCING_THIRDS = [
-  // e.g. 'SCO', 'BIH' — fill in when knockout bracket is announced
+  'SWE', // Sweden — Group F 3rd, confirmed advancing
+  'BIH', // Bosnia — Group B 3rd, confirmed advancing
+  'ECU', // Ecuador — Group E 3rd, confirmed advancing
 ];
 

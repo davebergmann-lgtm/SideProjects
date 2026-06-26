@@ -13,7 +13,7 @@ const LOCKED_POSITIONS = {
   C: { BRA: 1, MAR: 2, SCO: 3, HAI: 4 }, // Group C final standings
   D: { USA: 1, TUR: 4 },        // USA clinched 1st, Turkey clinched 4th
   E: { GER: 1, CIV: 2, ECU: 3, CUW: 4 }, // Group E final standings
-  F: { TUN: 4 },                // Tunisia clinched Group F 4th (eliminated)
+  F: { NED: 1, JPN: 2, SWE: 3, TUN: 4 }, // Group F final standings
   J: { ARG: 1, JOR: 4 },        // Argentina clinched 1st, Jordan clinched 4th
   L: { PAN: 4 },                // Panama clinched Group L 4th (eliminated)
 };

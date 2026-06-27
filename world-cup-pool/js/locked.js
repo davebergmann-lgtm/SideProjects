@@ -18,7 +18,7 @@ const LOCKED_POSITIONS = {
   H: { ESP: 1, CPV: 2, URU: 3, SAU: 4 }, // Group H final standings
   I: { FRA: 1, NOR: 2, SEN: 3, IRQ: 4 }, // Group I final standings
   J: { ARG: 1, JOR: 4 },        // Argentina clinched 1st, Jordan clinched 4th
-  L: { PAN: 4 },                // Panama clinched Group L 4th (eliminated)
+  L: { ENG: 1, CRO: 2, GHA: 3, PAN: 4 }, // Group L final standings
 };
 
 // =============================================================================

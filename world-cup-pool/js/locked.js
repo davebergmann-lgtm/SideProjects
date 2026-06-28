@@ -40,3 +40,9 @@ const ADVANCING_THIRDS = [
   'GHA', // Ghana — Group L 3rd, confirmed advancing
 ];
 
+// Teams that finished 3rd in their group but have been officially eliminated
+// from advancing to the knockout round. Picks of these teams earn 0 pts.
+const ELIMINATED_THIRDS = [
+  'SCO', // Scotland — Group C 3rd, officially eliminated from knockout
+];
+

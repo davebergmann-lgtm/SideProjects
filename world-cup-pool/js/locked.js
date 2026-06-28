@@ -18,6 +18,7 @@ const LOCKED_POSITIONS = {
   H: { ESP: 1, CPV: 2, URU: 3, SAU: 4 }, // Group H final standings
   I: { FRA: 1, NOR: 2, SEN: 3, IRQ: 4 }, // Group I final standings
   J: { ARG: 1, JOR: 4 },        // Argentina clinched 1st, Jordan clinched 4th
+  K: { COL: 1, POR: 2, COD: 3, UZB: 4 }, // Group K final standings
   L: { ENG: 1, CRO: 2, GHA: 3, PAN: 4 }, // Group L final standings
 };
 
@@ -35,5 +36,7 @@ const ADVANCING_THIRDS = [
   'ECU', // Ecuador — Group E 3rd, confirmed advancing
   'PAR', // Paraguay — Group D 3rd, confirmed advancing
   'SEN', // Senegal — Group I 3rd, confirmed advancing
+  'COD', // DR Congo — Group K 3rd, confirmed advancing
+  'GHA', // Ghana — Group L 3rd, confirmed advancing
 ];
 

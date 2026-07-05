@@ -1,17 +1,65 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import type { Show } from "@/lib/tvmaze";
+import type { Show, Episode } from "@/lib/tvmaze";
 import { getNetworkName, getAirTimeET } from "@/lib/tvmaze";
 
 interface ShowCardProps {
   show: Show;
 }
 
+interface NextEpInfo {
+  season: number;
+  number: number | null;
+  name: string;
+  airdate: string;
+  isSeasonPremiere: boolean;
+}
+
+function formatEpDate(dateStr: string): string {
+  return new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 export default function ShowCard({ show }: ShowCardProps) {
+  const [nextEp, setNextEp] = useState<NextEpInfo | null>(null);
+  const [nextEpLoaded, setNextEpLoaded] = useState(false);
+
   const network = getNetworkName(show);
   const airTime = getAirTimeET(show);
+
+  useEffect(() => {
+    const nextEpLink = show._links?.nextepisode?.href;
+    if (!nextEpLink) {
+      setNextEpLoaded(true);
+      return;
+    }
+
+    let cancelled = false;
+    fetch(nextEpLink)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((ep: Episode | null) => {
+        if (cancelled || !ep) return;
+        setNextEp({
+          season: ep.season,
+          number: ep.number,
+          name: ep.name,
+          airdate: ep.airdate,
+          isSeasonPremiere: ep.number === 1,
+        });
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setNextEpLoaded(true);
+      });
+
+    return () => { cancelled = true; };
+  }, [show._links?.nextepisode?.href]);
 
   const statusColor =
     show.status === "Running"
@@ -52,6 +100,32 @@ export default function ShowCard({ show }: ShowCardProps) {
           <span className={`${statusColor} font-medium`}>{show.status}</span>
         </div>
         <p className="text-slate-400 text-sm mt-1">{airTime}</p>
+
+        {/* Next episode / new season info */}
+        {nextEpLoaded && nextEp && (
+          <div className="mt-1.5">
+            {nextEp.isSeasonPremiere ? (
+              <div className="flex items-center gap-1.5">
+                <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-400 rounded text-xs font-semibold uppercase">
+                  New Season
+                </span>
+                <span className="text-xs text-slate-300">
+                  S{nextEp.season} premieres {nextEp.airdate ? formatEpDate(nextEp.airdate) : "TBA"}
+                </span>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400">
+                <span className="text-slate-300 font-medium">Next:</span>{" "}
+                S{nextEp.season}E{nextEp.number} &ldquo;{nextEp.name}&rdquo;
+                {nextEp.airdate ? ` – ${formatEpDate(nextEp.airdate)}` : " – TBA"}
+              </p>
+            )}
+          </div>
+        )}
+        {nextEpLoaded && !nextEp && show.status !== "Ended" && show.status !== "Running" && (
+          <p className="text-xs text-slate-500 mt-1.5">No upcoming episodes announced</p>
+        )}
+
         {show.genres.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2">
             {show.genres.slice(0, 3).map((g) => (

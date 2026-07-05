@@ -58,6 +58,8 @@ export default function ShowPage() {
   const today = new Date().toISOString().split("T")[0];
   const upcomingEpisodes = episodes.filter((ep) => ep.airdate >= today);
   const displayEpisodes = activeTab === "upcoming" ? upcomingEpisodes : episodes;
+  const nextEpisode = upcomingEpisodes.length > 0 ? upcomingEpisodes[0] : null;
+  const isNewSeason = nextEpisode?.number === 1;
 
   // Group episodes by season
   const seasons = new Map<number, Episode[]>();
@@ -140,6 +142,41 @@ export default function ShowPage() {
               <p className="text-sm text-slate-400">Runtime: {show.averageRuntime} min</p>
             )}
           </div>
+
+          {/* Next episode banner */}
+          {nextEpisode && (
+            <div className={`rounded-lg border p-3 ${
+              isNewSeason
+                ? "bg-purple-500/10 border-purple-500/30"
+                : "bg-blue-500/10 border-blue-500/30"
+            }`}>
+              <div className="flex items-center gap-2 mb-1">
+                {isNewSeason ? (
+                  <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded text-xs font-semibold uppercase">
+                    New Season
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded text-xs font-semibold uppercase">
+                    Next Episode
+                  </span>
+                )}
+              </div>
+              <p className="font-medium">
+                S{nextEpisode.season}E{String(nextEpisode.number || 0).padStart(2, "0")}: {nextEpisode.name}
+              </p>
+              <p className="text-sm text-slate-400 mt-0.5">
+                {nextEpisode.airdate
+                  ? new Date(nextEpisode.airdate + "T00:00:00").toLocaleDateString("en-US", {
+                      weekday: "long",
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    })
+                  : "Date TBA"}
+                {nextEpisode.airtime ? ` at ${nextEpisode.airtime}` : ""}
+              </p>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex flex-wrap gap-3">

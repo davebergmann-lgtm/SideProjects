@@ -4,6 +4,7 @@ import "./globals.css";
 import { ListsProvider } from "@/contexts/ListsContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import Navbar from "@/components/Navbar";
+import NewSeasonBanner from "@/components/NewSeasonBanner";
 
 export const metadata: Metadata = {
   title: "TV & Movie Tracker",
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen font-sans">
         <ListsProvider>
           <NotificationProvider>
+            <NewSeasonBanner />
             <Suspense>
               <Navbar />
             </Suspense>

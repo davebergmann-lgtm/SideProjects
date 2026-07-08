@@ -1,0 +1,20 @@
+{
+  "name": "PANTHEON — The Ultimate Mythology Challenge",
+  "short_name": "PANTHEON",
+  "description": "Test your mythology knowledge across Greek, Norse, Egyptian, Hindu, Japanese, Celtic, Aztec and more. Solo or multiplayer.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0c0a09",
+  "theme_color": "#0c0a09",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["games", "education"],
+  "screenshots": []
+}

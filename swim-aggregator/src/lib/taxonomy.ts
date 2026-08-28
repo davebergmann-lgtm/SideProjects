@@ -12,6 +12,7 @@ export const SWIM_STROKES = [
 export type SwimStroke = (typeof SWIM_STROKES)[number];
 
 export const SWIM_EXERCISE_TYPES = [
+  "workout",
   "drill",
   "set",
   "warmup",

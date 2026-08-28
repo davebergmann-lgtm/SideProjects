@@ -34,13 +34,18 @@ export type NormalizedExercise = {
   confidence: number;
 };
 
-const SYSTEM = `You extract structured swimming exercises, drills, and sets from arbitrary source content (transcripts, articles, pasted notes, image OCR).
+const SYSTEM = `You extract structured swimming content from arbitrary source material (transcripts, articles, pasted notes, image OCR).
 
-Rules:
+Grouping rule (IMPORTANT):
+- By default, emit ONE exercise per pasted source. A full workout (warmup + main set + cooldown) stays as ONE exercise with exercise_type "workout" and every section listed as an instruction line in order.
+- Only emit MULTIPLE exercises when the source is clearly a list of unrelated standalone items (e.g., "Here are 5 different drills you can try:" followed by 5 independent drills). When in doubt, keep it as one.
+- A single drill or a single set is one exercise. A whole workout is one exercise. A curated list of standalone drills is multiple exercises.
+
+Field rules:
 - Only extract SWIMMING content. Skip anything else silently.
-- Emit ONE exercise per distinct drill, set, or block. A workout with 6 sections becomes 6 exercises.
 - Preserve the source's exact numbers (distances, intervals, reps). Never fabricate prescriptions.
-- Use only enum values from the tool schema. If a value doesn't fit, use "any" for stroke or omit the field.
+- Use only enum values from the tool schema. If a value doesn't fit, use "any" for stroke, "workout" for exercise_type on mixed sessions, or omit optional fields.
+- For a whole-workout entry, stroke = "any" if the workout uses multiple strokes; otherwise the dominant stroke.
 - Set confidence 0.9+ when the source is explicit; 0.6-0.8 when you inferred fields; below 0.6 when guessing.
 - If the source contains no swimming content, return an empty exercises array.`;
 

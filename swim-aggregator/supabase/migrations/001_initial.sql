@@ -10,7 +10,7 @@ create type swim_stroke as enum (
 );
 
 create type swim_exercise_type as enum (
-  'drill', 'set', 'warmup', 'cooldown', 'technique', 'pull', 'kick', 'main_set'
+  'workout', 'drill', 'set', 'warmup', 'cooldown', 'technique', 'pull', 'kick', 'main_set'
 );
 
 create type pool_type as enum ('SCY', 'SCM', 'LCM', 'open_water');

@@ -102,6 +102,8 @@ async function upsertExercise(
       focus_notes: ex.focus_notes,
       safety_notes: ex.safety_notes,
       default_prescription: ex.default_prescription,
+      total_distance_meters: ex.total_distance_meters,
+      total_duration_minutes: ex.total_duration_minutes,
       source_kind: job.source_kind,
       source_url: job.source_url,
       source_excerpt: excerpt,

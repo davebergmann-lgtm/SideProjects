@@ -27,7 +27,8 @@ export default async function ExercisePage({ params }: { params: Promise<{ id: s
           {attrs.exercise_type && <Tag>{attrs.exercise_type}</Tag>}
           {ex.difficulty && <Tag>{ex.difficulty}</Tag>}
           {attrs.pool_type && <Tag>{attrs.pool_type}</Tag>}
-          {attrs.distance_meters && <Tag>{attrs.distance_meters}m</Tag>}
+          {ex.total_distance_meters != null && <Tag>total {ex.total_distance_meters}m</Tag>}
+          {ex.total_duration_minutes != null && <Tag>~{ex.total_duration_minutes} min</Tag>}
         </div>
         {ex.aliases.length > 0 && (
           <p className="text-sm text-[var(--muted)] mt-2">Also known as: {ex.aliases.join(", ")}</p>

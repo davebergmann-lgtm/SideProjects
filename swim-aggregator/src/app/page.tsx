@@ -3,7 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { Exercise } from "@/lib/supabase";
-import { SWIM_EQUIPMENT, SWIM_EXERCISE_TYPES, SWIM_FOCUS, SWIM_STROKES } from "@/lib/taxonomy";
+import {
+  DISTANCE_BUCKETS,
+  SWIM_EQUIPMENT,
+  SWIM_EXERCISE_TYPES,
+  SWIM_FOCUS,
+  SWIM_STROKES,
+  TIME_BUCKETS,
+} from "@/lib/taxonomy";
 
 type WebResult = { title: string; url: string; description: string; source: string };
 
@@ -12,6 +19,8 @@ export default function SearchPage() {
   const [q, setQ] = useState("");
   const [stroke, setStroke] = useState("");
   const [type, setType] = useState("");
+  const [distance, setDistance] = useState("");
+  const [time, setTime] = useState("");
   const [equipment, setEquipment] = useState<string[]>([]);
   const [focus, setFocus] = useState<string[]>([]);
 
@@ -25,10 +34,12 @@ export default function SearchPage() {
     if (q) p.set("q", q);
     if (stroke) p.set("stroke", stroke);
     if (type) p.set("type", type);
+    if (distance) p.set("distance", distance);
+    if (time) p.set("time", time);
     equipment.forEach((e) => p.append("equipment", e));
     focus.forEach((f) => p.append("focus", f));
     return p.toString();
-  }, [q, stroke, type, equipment, focus]);
+  }, [q, stroke, type, distance, time, equipment, focus]);
 
   useEffect(() => {
     if (tab !== "internal") return;
@@ -112,6 +123,8 @@ export default function SearchPage() {
           <aside className="space-y-4 text-sm">
             <FilterSelect label="Stroke" value={stroke} onChange={setStroke} options={SWIM_STROKES} />
             <FilterSelect label="Type" value={type} onChange={setType} options={SWIM_EXERCISE_TYPES} />
+            <FilterBuckets label="Total distance" value={distance} onChange={setDistance} buckets={DISTANCE_BUCKETS} />
+            <FilterBuckets label="Total time" value={time} onChange={setTime} buckets={TIME_BUCKETS} />
             <FilterMulti label="Equipment" values={equipment} options={SWIM_EQUIPMENT} onToggle={(v) => toggle(equipment, v, setEquipment)} />
             <FilterMulti label="Focus" values={focus} options={SWIM_FOCUS} onToggle={(v) => toggle(focus, v, setFocus)} />
           </aside>
@@ -173,6 +186,8 @@ function ExerciseCard({ ex }: { ex: Exercise }) {
         {attrs.stroke && <Chip>{attrs.stroke}</Chip>}
         {attrs.exercise_type && <Chip>{attrs.exercise_type}</Chip>}
         {ex.difficulty && <Chip>{ex.difficulty}</Chip>}
+        {ex.total_distance_meters != null && <Chip>{ex.total_distance_meters}m</Chip>}
+        {ex.total_duration_minutes != null && <Chip>{ex.total_duration_minutes} min</Chip>}
       </div>
       {ex.instructions[0] && (
         <p className="text-sm text-[var(--muted)] mt-1 line-clamp-2">{ex.instructions[0]}</p>
@@ -220,6 +235,38 @@ function FilterSelect({
           <option key={o} value={o}>{o}</option>
         ))}
       </select>
+    </div>
+  );
+}
+
+function FilterBuckets({
+  label,
+  value,
+  onChange,
+  buckets,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  buckets: readonly { id: string; label: string }[];
+}) {
+  return (
+    <div>
+      <label className="block font-medium mb-1">{label}</label>
+      <div className="flex flex-wrap gap-1">
+        {buckets.map((b) => {
+          const on = value === b.id;
+          return (
+            <button
+              key={b.id}
+              onClick={() => onChange(on ? "" : b.id)}
+              className={`text-xs px-2 py-0.5 rounded-full border ${on ? "bg-pool-600 text-white border-pool-600" : "border-[var(--border)] text-[var(--muted)]"}`}
+            >
+              {b.label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

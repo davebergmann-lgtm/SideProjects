@@ -31,6 +31,8 @@ export type NormalizedExercise = {
     rest_seconds?: number;
     interval?: string;
   } | null;
+  total_distance_meters: number | null;
+  total_duration_minutes: number | null;
   confidence: number;
 };
 
@@ -46,6 +48,8 @@ Field rules:
 - Preserve the source's exact numbers (distances, intervals, reps). Never fabricate prescriptions.
 - Use only enum values from the tool schema. If a value doesn't fit, use "any" for stroke, "workout" for exercise_type on mixed sessions, or omit optional fields.
 - For a whole-workout entry, stroke = "any" if the workout uses multiple strokes; otherwise the dominant stroke.
+- total_distance_meters: SUM every yardage/meterage across all sections in the workout (warmup + drills + main set + cooldown). Convert yards to meters if the source uses yards (1 yd = 0.9144 m). If the total cannot be reasonably summed from the source, set null.
+- total_duration_minutes: ESTIMATE the total workout time in minutes. Use ~1:30 per 100m for adult recreational pace (freestyle), slightly slower for other strokes, plus rest intervals. For a single drill or short set (not a full workout), set null.
 - Set confidence 0.9+ when the source is explicit; 0.6-0.8 when you inferred fields; below 0.6 when guessing.
 - If the source contains no swimming content, return an empty exercises array.`;
 
@@ -73,6 +77,8 @@ function buildTool(): Anthropic.Tool {
               "instructions",
               "focus_notes",
               "safety_notes",
+              "total_distance_meters",
+              "total_duration_minutes",
               "confidence",
             ],
             properties: {
@@ -104,6 +110,14 @@ function buildTool(): Anthropic.Tool {
                   rest_seconds: { type: "number" },
                   interval: { type: "string" },
                 },
+              },
+              total_distance_meters: {
+                type: ["number", "null"],
+                description: "Sum of all distances in the workout, in meters. Null for single drills or unbounded content.",
+              },
+              total_duration_minutes: {
+                type: ["number", "null"],
+                description: "Estimated total workout time in minutes. Null for single drills.",
               },
               confidence: { type: "number", minimum: 0, maximum: 1 },
             },

@@ -73,3 +73,20 @@ export type SwimmingAttrs = {
   pool_type?: PoolType;
   focus: SwimFocus[];
 };
+
+export const DISTANCE_BUCKETS = [
+  { id: "under_2000", label: "Under 2000m", min: 0, max: 1999 },
+  { id: "2000_2500", label: "2000 – 2500m", min: 2000, max: 2499 },
+  { id: "2500_3000", label: "2500 – 3000m", min: 2500, max: 2999 },
+  { id: "3000_up", label: "3000m & up", min: 3000, max: null },
+] as const;
+
+export const TIME_BUCKETS = [
+  { id: "under_45", label: "Under 45 min", min: 0, max: 44 },
+  { id: "45_60", label: "45 – 60 min", min: 45, max: 59 },
+  { id: "60_75", label: "60 – 75 min", min: 60, max: 74 },
+  { id: "75_up", label: "75 min & up", min: 75, max: null },
+] as const;
+
+export type DistanceBucketId = (typeof DISTANCE_BUCKETS)[number]["id"];
+export type TimeBucketId = (typeof TIME_BUCKETS)[number]["id"];

@@ -39,6 +39,8 @@ export type Exercise = {
   focus_notes: string[];
   safety_notes: string[];
   default_prescription: Record<string, unknown> | null;
+  total_distance_meters: number | null;
+  total_duration_minutes: number | null;
   source_kind: "text" | "url" | "youtube" | "image" | "web_search";
   source_url: string | null;
   source_excerpt: string | null;

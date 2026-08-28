@@ -42,6 +42,8 @@ export async function POST(req: Request) {
             focus_notes: ex.focus_notes,
             safety_notes: ex.safety_notes,
             default_prescription: ex.default_prescription,
+            total_distance_meters: ex.total_distance_meters,
+            total_duration_minutes: ex.total_duration_minutes,
             source_kind: "image",
             source_excerpt: content.slice(0, 400),
             ingest_job_id: jobId,

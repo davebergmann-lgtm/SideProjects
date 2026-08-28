@@ -5,7 +5,7 @@ import { extractImage } from "@/lib/extractors/image";
 import { normalize } from "@/lib/normalize";
 
 export const runtime = "nodejs";
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 type Body =
   | { kind: "text"; text: string }
@@ -81,7 +81,13 @@ export async function POST(req: Request) {
     raw_input: body.kind === "text" ? body.text : body.url,
   });
 
-  runJob(jobId).catch((err) => console.error("job failed", jobId, err));
-
-  return NextResponse.json({ jobId });
+  try {
+    await runJob(jobId);
+    return NextResponse.json({ jobId });
+  } catch (err) {
+    return NextResponse.json(
+      { jobId, error: (err as Error).message },
+      { status: 500 },
+    );
+  }
 }

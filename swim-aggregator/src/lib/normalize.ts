@@ -117,7 +117,7 @@ export async function normalize(
 
   const resp = await anthropic.messages.create({
     model: MODEL,
-    max_tokens: 16000,
+    max_tokens: 4096,
     system: SYSTEM,
     tools: [tool],
     tool_choice: { type: "tool", name: TOOL_NAME },

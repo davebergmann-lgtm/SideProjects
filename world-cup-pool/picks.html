@@ -177,6 +177,9 @@
     const advancingSet = (typeof ADVANCING_THIRDS !== 'undefined')
       ? new Set(ADVANCING_THIRDS)
       : new Set();
+    const eliminatedThirdsSet = (typeof ELIMINATED_THIRDS !== 'undefined')
+      ? new Set(ELIMINATED_THIRDS)
+      : new Set();
     const allThirdsAnnounced = advancingSet.size === 8;
 
     const thirdsRows = LETTERS.map(letter => {
@@ -189,6 +192,8 @@
         let cls = '';
         if (advancingSet.has(picked)) {
           cls = 'correct'; // confirmed advancing to knockout
+        } else if (eliminatedThirdsSet.has(picked)) {
+          cls = 'wrong'; // explicitly eliminated from advancing thirds race
         } else {
           const lockedPos = (locked[letter] || {})[picked];
           const lockedOutOfThird = lockedPos !== undefined && lockedPos !== 3;

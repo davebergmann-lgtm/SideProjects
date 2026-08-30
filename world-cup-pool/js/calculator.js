@@ -112,14 +112,19 @@ function scoreAdvancingThirds(advancingPicks, liveGroups) {
     }
 
     // Check if this team is permanently eliminated from the advancing thirds race:
-    // locked into any position other than 3rd in their group
-    let lockedOut = false;
-    for (const letter of GROUPS) {
-      const entries = liveGroups[letter] || [];
-      const entry = entries.find(e => normalizeTeam(e.team) === code);
-      if (entry && entry.lockedRank !== null && entry.lockedRank !== undefined && entry.lockedRank !== 3) {
-        lockedOut = true;
-        break;
+    // either explicitly eliminated, or locked into a position other than 3rd
+    const eliminatedSet = (typeof ELIMINATED_THIRDS !== 'undefined')
+      ? new Set(ELIMINATED_THIRDS.map(t => normalizeTeam(t)))
+      : new Set();
+    let lockedOut = eliminatedSet.has(code);
+    if (!lockedOut) {
+      for (const letter of GROUPS) {
+        const entries = liveGroups[letter] || [];
+        const entry = entries.find(e => normalizeTeam(e.team) === code);
+        if (entry && entry.lockedRank !== null && entry.lockedRank !== undefined && entry.lockedRank !== 3) {
+          lockedOut = true;
+          break;
+        }
       }
     }
 

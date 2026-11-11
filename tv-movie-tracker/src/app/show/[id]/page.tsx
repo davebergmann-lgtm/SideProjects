@@ -18,7 +18,13 @@ import AddToListModal from "@/components/AddToListModal";
 export default function ShowPage() {
   const params = useParams();
   const showId = Number(params.id);
-  const { getListsForShow } = useLists();
+  const {
+    getListsForShow,
+    isEpisodeWatched,
+    toggleEpisodeWatched,
+    markEpisodesWatched,
+    unmarkEpisodesWatched,
+  } = useLists();
 
   const [show, setShow] = useState<Show | null>(null);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
@@ -56,6 +62,10 @@ export default function ShowPage() {
   const listsWithShow = getListsForShow(show.id);
 
   const today = new Date().toISOString().split("T")[0];
+  // An episode counts as released only if it has a real air date that has passed.
+  const hasAired = (ep: Episode) => Boolean(ep.airdate) && ep.airdate <= today;
+  const airedEpisodes = episodes.filter(hasAired);
+  const watchedAiredCount = airedEpisodes.filter((ep) => isEpisodeWatched(show.id, ep.id)).length;
   const upcomingEpisodes = episodes.filter((ep) => ep.airdate >= today);
   const displayEpisodes = activeTab === "upcoming" ? upcomingEpisodes : episodes;
   const nextEpisode = upcomingEpisodes.length > 0 ? upcomingEpisodes[0] : null;
@@ -245,8 +255,15 @@ export default function ShowPage() {
 
       {/* Episodes */}
       <div>
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center gap-4 mb-4 flex-wrap">
           <h2 className="text-xl font-bold">Episodes</h2>
+          {airedEpisodes.length > 0 && (
+            <span className="text-sm text-slate-400">
+              <span className="text-green-400 font-medium">{watchedAiredCount}</span>
+              {" / "}
+              {airedEpisodes.length} watched
+            </span>
+          )}
           <div className="flex bg-[#1e293b] rounded-lg border border-[#334155] p-0.5">
             <button
               onClick={() => setActiveTab("upcoming")}
@@ -277,31 +294,96 @@ export default function ShowPage() {
           <div className="space-y-4">
             {Array.from(seasons.entries())
               .sort(([a], [b]) => (activeTab === "upcoming" ? a - b : b - a))
-              .map(([season, eps]) => (
+              .map(([season, eps]) => {
+                const airedInSeason = eps.filter(hasAired);
+                const watchedInSeason = airedInSeason.filter((ep) => isEpisodeWatched(show.id, ep.id));
+                const allSeasonWatched =
+                  airedInSeason.length > 0 && watchedInSeason.length === airedInSeason.length;
+
+                return (
                 <div key={season} className="bg-[#1e293b] rounded-lg border border-[#334155] overflow-hidden">
-                  <div className="px-4 py-3 bg-[#334155]/50 font-semibold">Season {season}</div>
+                  <div className="px-4 py-3 bg-[#334155]/50 font-semibold flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-3">
+                      <span>Season {season}</span>
+                      {airedInSeason.length > 0 && (
+                        <span className="text-xs font-normal text-slate-400">
+                          {watchedInSeason.length}/{airedInSeason.length} watched
+                        </span>
+                      )}
+                    </div>
+                    {airedInSeason.length > 0 && (
+                      <button
+                        onClick={() => {
+                          const ids = airedInSeason.map((ep) => ep.id);
+                          if (allSeasonWatched) {
+                            unmarkEpisodesWatched(show.id, ids);
+                          } else {
+                            markEpisodesWatched(show.id, ids);
+                          }
+                        }}
+                        className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+                          allSeasonWatched
+                            ? "bg-[#0f172a] text-slate-400 hover:text-white"
+                            : "bg-green-600/20 text-green-400 hover:bg-green-600/30"
+                        }`}
+                      >
+                        {allSeasonWatched ? "Unmark all" : "Mark all released watched"}
+                      </button>
+                    )}
+                  </div>
                   <div className="divide-y divide-[#334155]">
                     {eps.map((ep) => {
                       const isToday = ep.airdate === today;
                       const isFuture = ep.airdate > today;
+                      const aired = hasAired(ep);
+                      const watched = isEpisodeWatched(show.id, ep.id);
                       return (
                         <div
                           key={ep.id}
                           className={`px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-4 ${
                             isToday ? "bg-blue-500/10" : ""
-                          }`}
+                          } ${watched ? "opacity-60" : ""}`}
                         >
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-slate-400 text-sm font-mono shrink-0">
-                                E{String(ep.number || 0).padStart(2, "0")}
-                              </span>
-                              <span className="font-medium truncate">{ep.name}</span>
-                              {isToday && (
-                                <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded text-xs font-medium shrink-0">
-                                  TODAY
-                                </span>
+                          <div className="min-w-0 flex items-center gap-3">
+                            <button
+                              onClick={() => aired && toggleEpisodeWatched(show.id, ep.id)}
+                              disabled={!aired}
+                              aria-label={
+                                !aired
+                                  ? "Not released yet"
+                                  : watched
+                                  ? `Mark ${ep.name} unwatched`
+                                  : `Mark ${ep.name} watched`
+                              }
+                              title={!aired ? "Not released yet" : watched ? "Watched" : "Mark watched"}
+                              className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 transition-colors ${
+                                !aired
+                                  ? "border-[#334155] cursor-not-allowed opacity-40"
+                                  : watched
+                                  ? "bg-green-600 border-green-600 hover:bg-green-700"
+                                  : "border-slate-500 hover:border-green-500"
+                              }`}
+                            >
+                              {watched && (
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="white" className="w-3.5 h-3.5">
+                                  <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
+                                </svg>
                               )}
+                            </button>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-slate-400 text-sm font-mono shrink-0">
+                                  E{String(ep.number || 0).padStart(2, "0")}
+                                </span>
+                                <span className={`font-medium truncate ${watched ? "line-through text-slate-400" : ""}`}>
+                                  {ep.name}
+                                </span>
+                                {isToday && (
+                                  <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded text-xs font-medium shrink-0">
+                                    TODAY
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                           <div className="text-right shrink-0">
@@ -324,7 +406,8 @@ export default function ShowPage() {
                     })}
                   </div>
                 </div>
-              ))}
+                );
+              })}
           </div>
         )}
       </div>

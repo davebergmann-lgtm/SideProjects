@@ -19,6 +19,7 @@ export default function Navbar() {
   const desktopInputRef = useRef<HTMLInputElement>(null);
 
   const links = [
+    { href: "/watching", label: "Up Next" },
     { href: "/dashboard", label: "Dashboard" },
     { href: "/calendar", label: "Calendar" },
     { href: "/lists", label: "My Lists" },

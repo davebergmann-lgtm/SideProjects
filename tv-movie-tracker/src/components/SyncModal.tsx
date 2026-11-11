@@ -9,7 +9,7 @@ interface SyncModalProps {
 }
 
 export default function SyncModal({ open, onClose }: SyncModalProps) {
-  const { lists, replaceLists, syncStatus } = useLists();
+  const { lists, watched, replaceLists, syncStatus } = useLists();
   const [syncCode, setSyncCode] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("tv-tracker-sync-code") || "";
@@ -31,7 +31,7 @@ export default function SyncModal({ open, onClose }: SyncModalProps) {
       const res = await fetch("/api/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "create", lists }),
+        body: JSON.stringify({ action: "create", lists, watched }),
       });
       const text = await res.text();
       const data = text ? JSON.parse(text) : {};
@@ -60,7 +60,7 @@ export default function SyncModal({ open, onClose }: SyncModalProps) {
       const text = await res.text();
       const data = text ? JSON.parse(text) : {};
       if (!res.ok) throw new Error(data.error || "Failed to load");
-      replaceLists(data.lists);
+      replaceLists(data.lists, data.watched || {});
       setSyncCode(code);
       localStorage.setItem("tv-tracker-sync-code", code);
       setStatus(`Loaded ${data.lists.length} list(s). Auto-sync is now active.`);

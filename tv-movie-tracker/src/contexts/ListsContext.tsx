@@ -27,6 +27,9 @@ export interface ShowList {
   shows: SavedShow[];
 }
 
+/** Map of showId -> array of watched TVMaze episode IDs */
+export type WatchedMap = Record<number, number[]>;
+
 interface ListsContextType {
   lists: ShowList[];
   createList: (name: string) => ShowList;
@@ -36,13 +39,21 @@ interface ListsContextType {
   removeShowFromList: (listId: string, showId: number, itemType?: "show" | "movie") => void;
   isShowInList: (listId: string, showId: number, itemType?: "show" | "movie") => boolean;
   getListsForShow: (showId: number, itemType?: "show" | "movie") => ShowList[];
-  replaceLists: (newLists: ShowList[]) => void;
+  replaceLists: (newLists: ShowList[], newWatched?: WatchedMap) => void;
   syncStatus: "idle" | "saving" | "loading" | "error";
+  // Watched episode tracking
+  watched: WatchedMap;
+  isEpisodeWatched: (showId: number, episodeId: number) => boolean;
+  toggleEpisodeWatched: (showId: number, episodeId: number) => void;
+  markEpisodesWatched: (showId: number, episodeIds: number[]) => void;
+  unmarkEpisodesWatched: (showId: number, episodeIds: number[]) => void;
+  getWatchedCount: (showId: number) => number;
 }
 
 const ListsContext = createContext<ListsContextType | null>(null);
 
 const STORAGE_KEY = "tv-tracker-lists";
+const WATCHED_KEY = "tv-tracker-watched";
 const SYNC_CODE_KEY = "tv-tracker-sync-code";
 const AUTO_SAVE_DELAY = 2000;
 const POLL_INTERVAL = 30000;
@@ -58,8 +69,14 @@ function matchItem(item: SavedShow, id: number, itemType?: "show" | "movie"): bo
   return item.id === id && savedType === type;
 }
 
+/** Stable serialization of the full synced payload, used for change detection. */
+function serializeState(lists: ShowList[], watched: WatchedMap): string {
+  return JSON.stringify({ lists, watched });
+}
+
 export function ListsProvider({ children }: { children: React.ReactNode }) {
   const [lists, setLists] = useState<ShowList[]>([]);
+  const [watched, setWatched] = useState<WatchedMap>({});
   const [loaded, setLoaded] = useState(false);
   const [syncStatus, setSyncStatus] = useState<"idle" | "saving" | "loading" | "error">("idle");
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -80,15 +97,29 @@ export function ListsProvider({ children }: { children: React.ReactNode }) {
         setLists(normalized);
       } catch {}
     }
+
+    const storedWatched = localStorage.getItem(WATCHED_KEY);
+    if (storedWatched) {
+      try {
+        setWatched(JSON.parse(storedWatched) as WatchedMap);
+      } catch {}
+    }
+
     setLoaded(true);
   }, []);
 
-  // Save to localStorage whenever lists change
+  // Save to localStorage whenever lists or watched change
   useEffect(() => {
     if (loaded) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(lists));
     }
   }, [lists, loaded]);
+
+  useEffect(() => {
+    if (loaded) {
+      localStorage.setItem(WATCHED_KEY, JSON.stringify(watched));
+    }
+  }, [watched, loaded]);
 
   // Auto-pull from server on initial load
   useEffect(() => {
@@ -101,17 +132,18 @@ export function ListsProvider({ children }: { children: React.ReactNode }) {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.lists) {
-          const remoteJson = JSON.stringify(data.lists);
-          lastSavedJsonRef.current = remoteJson;
+          const remoteWatched: WatchedMap = data.watched || {};
+          lastSavedJsonRef.current = serializeState(data.lists, remoteWatched);
           isRemoteUpdateRef.current = true;
           setLists(data.lists);
+          setWatched(remoteWatched);
         }
         setSyncStatus("idle");
       })
       .catch(() => setSyncStatus("idle"));
   }, [loaded]);
 
-  // Auto-save to server when lists change (debounced)
+  // Auto-save to server when lists or watched change (debounced)
   useEffect(() => {
     if (!loaded) return;
 
@@ -123,7 +155,7 @@ export function ListsProvider({ children }: { children: React.ReactNode }) {
     const code = getSyncCode();
     if (!code) return;
 
-    const currentJson = JSON.stringify(lists);
+    const currentJson = serializeState(lists, watched);
     if (currentJson === lastSavedJsonRef.current) return;
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -134,7 +166,7 @@ export function ListsProvider({ children }: { children: React.ReactNode }) {
         const res = await fetch("/api/sync", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "save", code, lists }),
+          body: JSON.stringify({ action: "save", code, lists, watched }),
         });
         if (res.ok) {
           lastSavedJsonRef.current = currentJson;
@@ -149,7 +181,7 @@ export function ListsProvider({ children }: { children: React.ReactNode }) {
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [lists, loaded]);
+  }, [lists, watched, loaded]);
 
   // Poll for remote changes periodically
   useEffect(() => {
@@ -164,19 +196,21 @@ export function ListsProvider({ children }: { children: React.ReactNode }) {
         const data = await res.json();
         if (!data?.lists) return;
 
-        const remoteJson = JSON.stringify(data.lists);
-        const localJson = JSON.stringify(lists);
+        const remoteWatched: WatchedMap = data.watched || {};
+        const remoteJson = serializeState(data.lists, remoteWatched);
+        const localJson = serializeState(lists, watched);
 
         if (remoteJson !== localJson) {
           lastSavedJsonRef.current = remoteJson;
           isRemoteUpdateRef.current = true;
           setLists(data.lists);
+          setWatched(remoteWatched);
         }
       } catch {}
     }, POLL_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [loaded, lists]);
+  }, [loaded, lists, watched]);
 
   const createList = useCallback((name: string): ShowList => {
     const newList: ShowList = {
@@ -231,11 +265,68 @@ export function ListsProvider({ children }: { children: React.ReactNode }) {
     [lists]
   );
 
-  const replaceLists = useCallback((newLists: ShowList[]) => {
-    lastSavedJsonRef.current = JSON.stringify(newLists);
+  const replaceLists = useCallback((newLists: ShowList[], newWatched?: WatchedMap) => {
+    const resolvedWatched = newWatched ?? {};
+    lastSavedJsonRef.current = serializeState(newLists, resolvedWatched);
     isRemoteUpdateRef.current = true;
     setLists(newLists);
+    setWatched(resolvedWatched);
   }, []);
+
+  // ---- Watched episode tracking ----
+
+  const isEpisodeWatched = useCallback(
+    (showId: number, episodeId: number) => {
+      return watched[showId]?.includes(episodeId) ?? false;
+    },
+    [watched]
+  );
+
+  const toggleEpisodeWatched = useCallback((showId: number, episodeId: number) => {
+    setWatched((prev) => {
+      const current = prev[showId] || [];
+      const next = current.includes(episodeId)
+        ? current.filter((id) => id !== episodeId)
+        : [...current, episodeId];
+
+      if (next.length === 0) {
+        const copy = { ...prev };
+        delete copy[showId];
+        return copy;
+      }
+      return { ...prev, [showId]: next };
+    });
+  }, []);
+
+  const markEpisodesWatched = useCallback((showId: number, episodeIds: number[]) => {
+    if (episodeIds.length === 0) return;
+    setWatched((prev) => {
+      const current = prev[showId] || [];
+      const merged = Array.from(new Set([...current, ...episodeIds]));
+      return { ...prev, [showId]: merged };
+    });
+  }, []);
+
+  const unmarkEpisodesWatched = useCallback((showId: number, episodeIds: number[]) => {
+    if (episodeIds.length === 0) return;
+    setWatched((prev) => {
+      const current = prev[showId] || [];
+      const removeSet = new Set(episodeIds);
+      const next = current.filter((id) => !removeSet.has(id));
+
+      if (next.length === 0) {
+        const copy = { ...prev };
+        delete copy[showId];
+        return copy;
+      }
+      return { ...prev, [showId]: next };
+    });
+  }, []);
+
+  const getWatchedCount = useCallback(
+    (showId: number) => watched[showId]?.length ?? 0,
+    [watched]
+  );
 
   if (!loaded) return null;
 
@@ -252,6 +343,12 @@ export function ListsProvider({ children }: { children: React.ReactNode }) {
         getListsForShow,
         replaceLists,
         syncStatus,
+        watched,
+        isEpisodeWatched,
+        toggleEpisodeWatched,
+        markEpisodesWatched,
+        unmarkEpisodesWatched,
+        getWatchedCount,
       }}
     >
       {children}

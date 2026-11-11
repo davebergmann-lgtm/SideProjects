@@ -53,7 +53,10 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { action, code, lists } = body;
+  const { action, code, lists, watched } = body;
+
+  // Watched episodes are optional so older clients that don't send them still work.
+  const watchedPayload = watched ?? {};
 
   if (action === "create") {
     // Generate a new sync code and store the lists
@@ -63,10 +66,10 @@ export async function POST(req: NextRequest) {
     if (existing) {
       // Extremely unlikely collision — just try again
       const retryCode = generateCode();
-      await redis.set(`sync:${retryCode}`, { lists, updatedAt: new Date().toISOString() }, { ex: 90 * 24 * 60 * 60 }); // 90 days
+      await redis.set(`sync:${retryCode}`, { lists, watched: watchedPayload, updatedAt: new Date().toISOString() }, { ex: 90 * 24 * 60 * 60 }); // 90 days
       return NextResponse.json({ code: retryCode });
     }
-    await redis.set(`sync:${newCode}`, { lists, updatedAt: new Date().toISOString() }, { ex: 90 * 24 * 60 * 60 });
+    await redis.set(`sync:${newCode}`, { lists, watched: watchedPayload, updatedAt: new Date().toISOString() }, { ex: 90 * 24 * 60 * 60 });
     return NextResponse.json({ code: newCode });
   }
 
@@ -80,7 +83,7 @@ export async function POST(req: NextRequest) {
     if (!existing) {
       return NextResponse.json({ error: "Sync code not found" }, { status: 404 });
     }
-    await redis.set(`sync:${upperCode}`, { lists, updatedAt: new Date().toISOString() }, { ex: 90 * 24 * 60 * 60 });
+    await redis.set(`sync:${upperCode}`, { lists, watched: watchedPayload, updatedAt: new Date().toISOString() }, { ex: 90 * 24 * 60 * 60 });
     return NextResponse.json({ success: true });
   }
 
